@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operation: Bravo Late-Life | Offshore Asset Management Game</title>
+  <meta name="description" content="A real-time collaborative team-building game for offshore gas platform late-life asset management.">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- Socket.io client -->
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <!-- Ambient background elements -->
+  <div class="ambient-glow bg-glow-1"></div>
+  <div class="ambient-glow bg-glow-2"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- Notification Banner -->
+  <div id="notification-banner" class="notification-banner hidden">
+    <span id="notification-text">System Alert</span>
+    <button id="notification-close" onclick="closeNotification()">&times;</button>
+  </div>
+
+  <div class="app-container">
+    <!-- ================= LOBBY SCREEN ================= -->
+    <section id="lobby-screen" class="game-card screen-section active">
+      <div class="logo-area">
+        <div class="logo-icon">&#x2699;</div>
+        <h1>OPERATION: BRAVO LATE-LIFE</h1>
+        <p class="tagline">Offshore Gas Producing Platform Maintenance Simulation</p>
+      </div>
+
+      <div class="lobby-grid">
+        <!-- Join Form -->
+        <div class="glass-panel join-form-panel">
+          <h2>Access Terminal</h2>
+          <form id="join-form">
+            <div class="input-group">
+              <label for="player-name">Operator Callsign</label>
+              <input type="text" id="player-name" required placeholder="e.g., COMMANDER, LOG-LEAD">
+            </div>
+
+            <div class="input-group">
+              <label for="player-team">Assigned Team</label>
+              <select id="player-team" required>
+                <option value="" disabled selected>Select Team...</option>
+                <option value="alpha">Team Alpha</option>
+                <option value="beta">Team Beta</option>
+                <option value="gamma">Team Gamma</option>
+                <option value="delta">Team Delta</option>
+              </select>
+            </div>
+
+            <div class="input-group">
+              <label for="player-role">Specialty Role</label>
+              <select id="player-role" required>
+                <option value="" disabled selected>Select Specialty...</option>
+                <option value="FA">Asset Manager (Team Leader) [FA]</option>
+                <option value="SE">Structural & Integrity Engineer [SE]</option>
+                <option value="PE">Process & Production Engineer [PE]</option>
+                <option value="HSE">HSE & Regulatory Compliance Officer [HSE]</option>
+                <option value="LSC">Logistics & Supply Chain Manager [LSC]</option>
+              </select>
+            </div>
+
+            <button type="submit" id="btn-join" class="btn btn-primary btn-glow">Establish Uplink</button>
+          </form>
+        </div>
+
+        <!-- System Status & Instructions -->
+        <div class="glass-panel instructions-panel">
+          <h2>Simulation Protocols</h2>
+          <div class="instructions-content">
+            <p><strong>Deployment:</strong> 4 teams, 5 specialized roles per team. You must collaborate with your team to solve critical asset management decisions for Platform Bravo.</p>
+            <ul>
+              <li><strong>Role manuals</strong> contain unique, fragmented data necessary to solve the round's puzzle. Communication is key!</li>
+              <li><strong>Shared Notepad</strong> updates in real-time across your team's terminals.</li>
+              <li><strong>Final Decider:</strong> Only the Asset Manager (Team Leader) can submit the team's official answer.</li>
+              <li><strong>Scoring Rules:</strong>
+                <ul style="margin-top: 5px; margin-bottom: 0; padding-left: 15px; font-size: 0.85rem;">
+                  <li>Base Points: 1st: 100 | 2nd: 80 | 3rd: 60 | 4th: 40 pts</li>
+                  <li>Speed Bonus: &lt;3m: +30 | &lt;6m: +20 | &lt;10m: +10 pts</li>
+                  <li>Penalties: -10 pts per incorrect calibration attempt</li>
+                  <li>Partial Solves: 50% points (Objective Mode, 1/2 correct)</li>
+                  <li>Floor Limit: Minimum 10 pts per completed round</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+          <div class="facilitator-access">
+            <button id="btn-fac-login" class="btn btn-secondary">Facilitator Console</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Crew List -->
+      <div class="glass-panel crew-list-panel">
+        <h2>Live Network Terminals</h2>
+        <div id="crew-grid" class="crew-grid">
+          <div class="team-crew-col" data-team="alpha">
+            <h3>Team Alpha</h3>
+            <ul id="crew-alpha"></ul>
+          </div>
+          <div class="team-crew-col" data-team="beta">
+            <h3>Team Beta</h3>
+            <ul id="crew-beta"></ul>
+          </div>
+          <div class="team-crew-col" data-team="gamma">
+            <h3>Team Gamma</h3>
+            <ul id="crew-gamma"></ul>
+          </div>
+          <div class="team-crew-col" data-team="delta">
+            <h3>Team Delta</h3>
+            <ul id="crew-delta"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PLAYER TERMINAL SCREEN ================= -->
+    <section id="player-screen" class="screen-section hidden">
+      <!-- Terminal Header -->
+      <header class="terminal-header">
+        <div class="header-left">
+          <div class="connection-status blink"></div>
+          <span id="display-team-name" class="team-badge">Team Alpha</span>
+          <span id="display-role-name" class="role-badge">Asset Manager (Team Leader)</span>
+        </div>
+        <div class="header-center">
+          <h2 id="round-title-display">Round 1: Gas Compressor Vibration</h2>
+        </div>
+        <div class="header-right">
+          <div class="score-display">SCORE: <span id="display-team-score">0</span></div>
+          <div class="timer-display">ELAPSED: <span id="player-timer" class="clock-font">00:00</span></div>
+        </div>
+      </header>
+
+      <!-- Main Terminal Layout -->
+      <div class="terminal-grid">
+        <!-- Manuals & Info (Left Panel) -->
+        <div class="terminal-left-panel">
+          <div class="tab-container">
+            <button class="tab-btn active" onclick="switchTab('tab-brief')">Scenario Brief</button>
+            <button class="tab-btn" onclick="switchTab('tab-manual')">My Role Manual</button>
+            <button class="tab-btn" onclick="switchTab('tab-notes')">Shared Team Notes</button>
+            <button class="tab-btn" onclick="switchTab('tab-scoring')">Scoring System</button>
+          </div>
+
+          <div class="tab-content-wrapper">
+            <!-- Scenario Brief Tab -->
+            <div id="tab-brief" class="tab-pane active">
+              <div id="brief-content" class="rich-text">
+                <!-- Injected via JavaScript -->
+              </div>
+            </div>
+
+            <!-- Role Manual Tab -->
+            <div id="tab-manual" class="tab-pane">
+              <div class="role-manual-warning">
+                <span class="warning-icon">&#x26A0;</span> Classified data. Do not show your screen to other teams. Verbalize coordinates and calculations.
+              </div>
+              <div id="manual-content" class="rich-text">
+                <!-- Injected via JavaScript -->
+              </div>
+            </div>
+
+            <!-- Shared Team Notes Tab -->
+            <div id="tab-notes" class="tab-pane">
+              <div class="notes-header">
+                <p>Collaborative Notepad (instantly updates for all team members):</p>
+              </div>
+              <textarea id="shared-notes" placeholder="Type team calculations, timelines, or variables here..."></textarea>
+            </div>
+
+            <!-- Scoring System Tab -->
+            <div id="tab-scoring" class="tab-pane">
+              <h3>Platform Bravo Scoring Protocol</h3>
+              <div class="data-card">
+                <h4>Round Completion Points</h4>
+                <p>Points are calculated dynamically per round based on completion order, speed, and calibration accuracy:</p>
+                <ul style="padding-left: 20px; margin-top: 10px;">
+                  <li style="margin-bottom: 8px;"><strong>Base Points:</strong> 1st place: 100 pts | 2nd place: 80 pts | 3rd place: 60 pts | 4th place: 40 pts.</li>
+                  <li style="margin-bottom: 8px;"><strong>Speed Bonus:</strong> Under 3 minutes: +30 pts | Under 6 minutes: +20 pts | Under 10 minutes: +10 pts.</li>
+                  <li style="margin-bottom: 8px;"><strong>Calibration Penalty:</strong> -10 points deduction per incorrect calibration attempt.</li>
+                  <li style="margin-bottom: 8px;"><strong>Objective Multiplier:</strong> In Multiple Choice mode, submitting 1 correct and 1 incorrect answer grants a partial solve with a 50% scoring multiplier.</li>
+                  <li><strong>Minimum Points:</strong> The final points earned per round cannot drop below 10 points.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Decisional Control Center (Right Panel) -->
+        <div class="terminal-right-panel glass-panel">
+          <div class="panel-header">
+            <h3>Decisional Control Center</h3>
+            <span id="leader-lock-badge" class="badge badge-warning">FA Lock Enabled</span>
+          </div>
+
+          <div class="panel-body">
+            <!-- Round Status Indicator -->
+            <div id="team-round-status-box" class="status-box status-idle">
+              <div class="status-spinner"></div>
+              <span id="team-round-status-text">Awaiting Facilitator authorization...</span>
+            </div>
+
+            <!-- Input Form -->
+            <div class="inputs-container">
+              <div id="dynamic-submit-form">
+                <!-- Injected via JavaScript based on round -->
+              </div>
+            </div>
+
+            <!-- Submit buttons -->
+            <div class="submit-action-area">
+              <div id="leader-only-warning" class="info-alert hidden">
+                Only the Asset Manager (Team Leader) can submit the final decision. You can edit the inputs to help fill the draft.
+              </div>
+              <button id="btn-submit-answer" class="btn btn-primary btn-glow btn-block" disabled>
+                Submit Decisional Calibration
+              </button>
+            </div>
+
+            <!-- Attempts Counter -->
+            <div class="attempts-indicator">
+              Calibration Attempts: <span id="display-attempts-count">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FACILITATOR SCREEN ================= -->
+    <section id="facilitator-screen" class="screen-section hidden">
+      <header class="terminal-header">
+        <div class="header-left">
+          <span class="admin-badge">Facilitator Console</span>
+        </div>
+        <div class="header-center">
+          <h2>PLATFORM BRAVO CONTROL COMMAND</h2>
+        </div>
+        <div class="header-right">
+          <div class="timer-display">ROUND TIMER: <span id="fac-timer" class="clock-font">00:00</span></div>
+        </div>
+      </header>
+
+      <div class="fac-grid">
+        <!-- Control Deck (Left) -->
+        <div class="fac-left-panel">
+          <!-- Game Settings & Control -->
+          <div class="glass-panel control-card">
+            <h3>Simulation Command Deck</h3>
+            <div class="admin-status-bar">
+              <div>Game Status: <span id="fac-game-status" class="badge">LOBBY</span></div>
+              <div>Active Round: <span id="fac-current-round" class="badge">Round 1</span></div>
+            </div>
+
+            <div class="puzzle-mode-selector-wrap" style="margin: 15px 0; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px; border: 1px dashed rgba(255,255,255,0.1);">
+              <label for="fac-puzzle-mode" style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;">Game Puzzle Mode:</label>
+              <select id="fac-puzzle-mode" style="width: 100%; background: var(--bg-panel); color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 4px; font-family: inherit; font-size: 0.9rem; cursor: pointer;">
+                <option value="standard">Standard Mode (Simplified Calculations)</option>
+                <option value="objective">Objective Mode (Multiple Choice)</option>
+              </select>
+            </div>
+
+            <div class="control-btn-grid">
+              <button id="btn-fac-start-game" class="btn btn-success">Initialize Game</button>
+              <button id="btn-fac-start-timer" class="btn btn-primary" disabled>Start Round Timer</button>
+              <button id="btn-fac-pause-timer" class="btn btn-warning" disabled>Pause Timer</button>
+              <button id="btn-fac-end-round" class="btn btn-danger" disabled>Force End Round</button>
+              <button id="btn-fac-next-round" class="btn btn-secondary" disabled>Next Round</button>
+              <button id="btn-fac-reset" class="btn btn-danger-outline">Full System Reset</button>
+            </div>
+          </div>
+
+          <!-- Scoring Guide Cheat Sheet -->
+          <div class="glass-panel control-card" style="margin-top: 15px; padding: 15px; font-size: 0.85rem;">
+            <h4 style="text-transform: uppercase; color: var(--primary); margin-bottom: 8px; font-size: 0.9rem; letter-spacing: 1px; font-weight:600;">Scoring Reference Cheat Sheet</h4>
+            <ul style="list-style: none; padding-left: 0;">
+              <li style="margin-bottom: 6px; color: var(--text-muted);"><strong style="color:#fff;">Base Order:</strong> 1st: 100 | 2nd: 80 | 3rd: 60 | 4th: 40 pts</li>
+              <li style="margin-bottom: 6px; color: var(--text-muted);"><strong style="color:#fff;">Speed Bonus:</strong> &lt;3m: +30 | &lt;6m: +20 | &lt;10m: +10 pts</li>
+              <li style="margin-bottom: 6px; color: var(--text-muted);"><strong style="color:#fff;">Penalties:</strong> -10 pts per incorrect attempt</li>
+              <li style="margin-bottom: 6px; color: var(--text-muted);"><strong style="color:#fff;">Partial Solves:</strong> 50% points (Objective Mode, 1/2 correct)</li>
+              <li style="color: var(--text-muted);"><strong style="color:#fff;">Floor Limit:</strong> Minimum 10 pts per completed round</li>
+            </ul>
+          </div>
+
+          <!-- Leaderboard -->
+          <div class="glass-panel leaderboard-card">
+            <h3>Global Leaderboard</h3>
+            <div id="fac-leaderboard-bars" class="leaderboard-bars">
+              <div class="leader-bar-row">
+                <div class="leader-team-name">Team Alpha</div>
+                <div class="leader-bar-wrapper">
+                  <div id="bar-alpha" class="leader-bar" style="width: 0%;"></div>
+                </div>
+                <div id="score-alpha" class="leader-score">0 pts</div>
+              </div>
+              <div class="leader-bar-row">
+                <div class="leader-team-name">Team Beta</div>
+                <div class="leader-bar-wrapper">
+                  <div id="bar-beta" class="leader-bar" style="width: 0%;"></div>
+                </div>
+                <div id="score-beta" class="leader-score">0 pts</div>
+              </div>
+              <div class="leader-bar-row">
+                <div class="leader-team-name">Team Gamma</div>
+                <div class="leader-bar-wrapper">
+                  <div id="bar-gamma" class="leader-bar" style="width: 0%;"></div>
+                </div>
+                <div id="score-gamma" class="leader-score">0 pts</div>
+              </div>
+              <div class="leader-bar-row">
+                <div class="leader-team-name">Team Delta</div>
+                <div class="leader-bar-wrapper">
+                  <div id="bar-delta" class="leader-bar" style="width: 0%;"></div>
+                </div>
+                <div id="score-delta" class="leader-score">0 pts</div>
+              </div>
+            </div>
+
+            <!-- Score Adjuster -->
+            <div class="score-adjuster-panel">
+              <h4>Manual Override Score Adjuster</h4>
+              <div class="adjuster-row">
+                <select id="adjust-team">
+                  <option value="alpha">Team Alpha</option>
+                  <option value="beta">Team Beta</option>
+                  <option value="gamma">Team Gamma</option>
+                  <option value="delta">Team Delta</option>
+                </select>
+                <input type="number" id="adjust-amount" placeholder="e.g. -50 or 100" class="input-small">
+                <button id="btn-adjust-score" class="btn btn-small">Adjust</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Status & Ticker (Right) -->
+        <div class="fac-right-panel">
+          <!-- Round Status Matrix -->
+          <div class="glass-panel matrix-card">
+            <h3>Crew Progress Matrix</h3>
+            <table class="fac-matrix-table">
+              <thead>
+                <tr>
+                  <th>Team</th>
+                  <th>Status</th>
+                  <th>Calibration Time</th>
+                  <th>Attempts</th>
+                  <th>Round Points</th>
+                </tr>
+              </thead>
+              <tbody id="fac-matrix-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Console Event Ticker -->
+          <div class="glass-panel console-card">
+            <h3>Central Network Log</h3>
+            <div id="fac-console-logs" class="console-logs">
+              <!-- Logs scroll here -->
+            </div>
+          </div>
+
+          <!-- Solution Revealer -->
+          <div class="glass-panel solution-card">
+            <h3>Decisional Solution Ledger</h3>
+            <button id="btn-reveal-solution" class="btn btn-secondary btn-block">Read Calibration Ledger</button>
+            <div id="fac-solution-details" class="solution-details hidden">
+              <h4 id="solution-round-title">Round 1 Solution</h4>
+              <p id="solution-explanation"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Network Terminals for Facilitator -->
+      <div class="glass-panel crew-list-panel" style="margin-top: 24px;">
+        <h2>Active Team Connections</h2>
+        <div id="fac-crew-grid" class="crew-grid">
+          <div class="team-crew-col" data-team="alpha">
+            <h3>Team Alpha</h3>
+            <ul id="fac-crew-alpha"></ul>
+          </div>
+          <div class="team-crew-col" data-team="beta">
+            <h3>Team Beta</h3>
+            <ul id="fac-crew-beta"></ul>
+          </div>
+          <div class="team-crew-col" data-team="gamma">
+            <h3>Team Gamma</h3>
+            <ul id="fac-crew-gamma"></ul>
+          </div>
+          <div class="team-crew-col" data-team="delta">
+            <h3>Team Delta</h3>
+            <ul id="fac-crew-delta"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="back-to-lobby-link">
+        <button id="btn-fac-exit" class="btn btn-secondary-outline btn-small">Return to Terminal Login</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Round End Report Modal -->
+  <div id="report-modal" class="modal-overlay hidden">
+    <div class="modal-card glass-panel">
+      <div class="modal-header">
+        <h2 id="modal-round-title">ROUND END REPORT</h2>
+        <button class="modal-close-btn" onclick="closeReportModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-status-section">
+          <span id="modal-team-status-badge" class="badge">Awaiting Results</span>
+        </div>
+        
+        <div class="modal-score-section">
+          <h3>Your Team Scoring</h3>
+          <div class="modal-score-grid">
+            <div class="modal-score-card">
+              <span class="score-card-label">Base Points</span>
+              <span id="modal-base-points" class="score-card-val">0</span>
+            </div>
+            <div class="modal-score-card">
+              <span class="score-card-label">Speed Bonus</span>
+              <span id="modal-speed-bonus" class="score-card-val">+0</span>
+            </div>
+            <div class="modal-score-card">
+              <span class="score-card-label">Attempts Penalty</span>
+              <span id="modal-penalty-points" class="score-card-val">-0</span>
+            </div>
+            <div class="modal-score-card highlighted">
+              <span class="score-card-label">Final Score</span>
+              <span id="modal-final-points" class="score-card-val">0</span>
+            </div>
+          </div>
+          <div id="modal-partial-multiplier-note" class="info-alert hidden" style="margin-top: 12px; margin-bottom: 0;">
+            Note: 50% partial success modifier applied (1 of 2 correct in Objective Mode).
+          </div>
+        </div>
+
+        <div class="modal-explanation-section">
+          <h3>Optimal Decisional Ledger</h3>
+          <div class="modal-explanation-box">
+            <p id="modal-explanation-text">Optimal choices explanation goes here...</p>
+          </div>
+        </div>
+
+        <div class="modal-explanation-section" style="margin-top: 15px;">
+          <h3>Framework Compliance Support</h3>
+          <div class="modal-explanation-box" style="border-left-color: var(--primary);">
+            <p id="modal-compliance-text">How it complies with Shell Performance Framework...</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-block" onclick="closeReportModal()">Acknowledge & Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

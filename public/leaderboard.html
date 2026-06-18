@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Central Command Monitor | Operation: Bravo Late-Life</title>
+  <meta name="description" content="Live central leaderboard and crew status monitor.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    /* Custom override styles for the full screen main monitor view */
+    body {
+      padding: 0;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .monitor-container {
+      flex: 1;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+    .monitor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 20, 32, 0.9);
+      border: 1px solid var(--border-subtle);
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .monitor-header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      margin: 0;
+      background: linear-gradient(135deg, #fff, var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .monitor-header-right {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      font-size: 1rem;
+    }
+    .monitor-header-right .badge {
+      font-size: 0.85rem;
+      padding: 6px 12px;
+    }
+    .monitor-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 30px;
+      flex: 1;
+      min-height: 0; /* Important for grid sizing with overflow */
+    }
+    .monitor-col {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      min-height: 0;
+    }
+    .monitor-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .monitor-panel h3 {
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 10px;
+    }
+    .panel-body-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+    /* Larger matrix elements for readability at a distance */
+    .fac-matrix-table th, .fac-matrix-table td {
+      padding: 16px 20px;
+      font-size: 1.05rem;
+    }
+    .leaderboard-bars {
+      gap: 25px;
+    }
+    .leader-bar-row {
+      gap: 20px;
+    }
+    .leader-team-name {
+      font-size: 1.15rem;
+      width: 120px;
+    }
+    .leader-bar-wrapper {
+      height: 28px;
+      border-radius: 14px;
+    }
+    .leader-bar {
+      border-radius: 14px;
+    }
+    .leader-score {
+      font-size: 1.35rem;
+      width: 90px;
+    }
+    .crew-grid {
+      gap: 15px;
+    }
+    .team-crew-col {
+      padding: 12px;
+    }
+    .team-crew-col h3 {
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+    .team-crew-col li {
+      font-size: 0.8rem;
+      padding: 5px 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient background elements -->
+  <div class="ambient-glow bg-glow-1"></div>
+  <div class="ambient-glow bg-glow-2"></div>
+  <div class="grid-overlay"></div>
+
+  <div class="monitor-container">
+    <!-- Monitor Header -->
+    <header class="monitor-header">
+      <h1>
+        <span style="color: var(--primary);">&#x2699;</span>
+        OPERATION: BRAVO LATE-LIFE | CENTRAL COMMAND
+      </h1>
+      <div class="monitor-header-right">
+        <div>STATUS: <span id="monitor-game-status" class="badge">LOBBY</span></div>
+        <div>ROUND: <span id="monitor-current-round" class="badge">LOBBY</span></div>
+        <div class="timer-display">TIMER: <span id="monitor-timer" class="clock-font">00:00</span></div>
+      </div>
+    </header>
+
+    <!-- Monitor Dashboard Grid -->
+    <div class="monitor-grid">
+      <!-- Left Column: Global Leaderboard -->
+      <div class="monitor-col">
+        <div class="glass-panel monitor-panel">
+          <h3>Global Leaderboard Scoreboard</h3>
+          <div class="panel-body-scroll" style="display: flex; flex-direction: column; justify-content: center; height: 100%;">
+            <div id="monitor-leaderboard-bars" class="leaderboard-bars">
+              <!-- Dynamically populated and sorted -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Progress Matrix & Active Connections -->
+      <div class="monitor-col">
+        <!-- Progress Matrix -->
+        <div class="glass-panel monitor-panel" style="flex: 1.2;">
+          <h3>Crew Calibration Matrix</h3>
+          <div class="panel-body-scroll">
+            <table class="fac-matrix-table" style="width: 100%;">
+              <thead>
+                <tr>
+                  <th>Team</th>
+                  <th>Status</th>
+                  <th>Calibration Time</th>
+                  <th>Attempts</th>
+                  <th>Round Points</th>
+                </tr>
+              </thead>
+              <tbody id="monitor-matrix-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Connected Crew Grid -->
+        <div class="glass-panel monitor-panel" style="flex: 0.8;">
+          <h3>Active Crew Uplink Connections</h3>
+          <div class="panel-body-scroll">
+            <div id="monitor-crew-grid" class="crew-grid">
+              <div class="team-crew-col" data-team="alpha">
+                <h3>Team Alpha</h3>
+                <ul id="monitor-crew-alpha"></ul>
+              </div>
+              <div class="team-crew-col" data-team="beta">
+                <h3>Team Beta</h3>
+                <ul id="monitor-crew-beta"></ul>
+              </div>
+              <div class="team-crew-col" data-team="gamma">
+                <h3>Team Gamma</h3>
+                <ul id="monitor-crew-gamma"></ul>
+              </div>
+              <div class="team-crew-col" data-team="delta">
+                <h3>Team Delta</h3>
+                <ul id="monitor-crew-delta"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monitor Footer with Scoring explanation -->
+    <footer style="margin-top: 10px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; border-top: 1px solid var(--border-subtle); padding-top: 15px; font-size: 0.8rem; color: var(--text-muted); text-align: center;">
+      <div><strong>Base Points:</strong> 1st: 100, 2nd: 80, 3rd: 60, 4th: 40 pts</div>
+      <div><strong>Speed Bonus:</strong> &lt;3m: +30, &lt;6m: +20, &lt;10m: +10 pts</div>
+      <div><strong>Penalties:</strong> -10 pts per incorrect attempt</div>
+      <div><strong>Partial Solves:</strong> 50% points (Objective mode, 1/2 correct)</div>
+      <div><strong>Score Floor:</strong> Minimum 10 pts per round</div>
+    </footer>
+  </div>
+
+  <script src="leaderboard.js"></script>
+</body>
+</html>
