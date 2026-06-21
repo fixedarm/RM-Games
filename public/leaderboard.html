@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Central Command Monitor | Operation: Bravo Late-Life</title>
+  <title>Central Command Monitor | Routine Maintenance: SCL Late Life</title>
   <meta name="description" content="Live central leaderboard and crew status monitor.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -136,6 +136,75 @@
   </style>
 </head>
 <body>
+  <!-- Game Background Backdrop (Sea & Platform) -->
+  <div class="game-backdrop">
+    <svg class="backdrop-svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice">
+      <defs>
+        <linearGradient id="darkSkyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="hsl(222, 28%, 6%)"/>
+          <stop offset="60%" stop-color="hsl(222, 28%, 12%)"/>
+          <stop offset="100%" stop-color="hsl(218, 30%, 18%)"/>
+        </linearGradient>
+        <linearGradient id="lightSkyGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="hsl(205, 30%, 75%)"/>
+          <stop offset="60%" stop-color="hsl(205, 20%, 85%)"/>
+          <stop offset="100%" stop-color="hsl(210, 15%, 90%)"/>
+        </linearGradient>
+        <radialGradient id="flareGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(255, 120, 0, 0.7)"/>
+          <stop offset="50%" stop-color="rgba(255, 60, 0, 0.25)"/>
+          <stop offset="100%" stop-color="rgba(255, 0, 0, 0)"/>
+        </radialGradient>
+        <linearGradient id="flareOuterGrad" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%" stop-color="hsl(15, 100%, 55%)"/>
+          <stop offset="50%" stop-color="hsl(35, 100%, 60%)"/>
+          <stop offset="100%" stop-color="hsl(55, 100%, 75%)" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="flareInnerGrad" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%" stop-color="hsl(45, 100%, 70%)"/>
+          <stop offset="100%" stop-color="hsl(60, 100%, 95%)" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <rect class="backdrop-sky" width="1440" height="900"/>
+      <!-- Sun -->
+      <circle class="backdrop-sun-glow" cx="250" cy="150" r="90"/>
+      <circle class="backdrop-sun" cx="250" cy="150" r="50"/>
+      <!-- Moon -->
+      <g class="backdrop-moon-group">
+        <circle class="backdrop-moon-glow" cx="1190" cy="150" r="75"/>
+        <circle class="backdrop-moon" cx="1190" cy="150" r="45"/>
+      </g>
+      <!-- Sea -->
+      <path class="backdrop-sea" d="M0 680 Q360 675 720 680 T1440 680 L1440 900 L0 900 Z"/>
+      <path class="backdrop-sea-highlight" d="M0 690 Q360 687 720 690 T1440 690 L1440 900 L0 900 Z"/>
+      <!-- Oil Platform -->
+      <g class="backdrop-platform">
+        <path d="M820 680 L850 560 L970 560 L1000 680 M860 680 L880 560 M960 680 L940 560" stroke-width="3"/>
+        <path d="M820 680 L970 560 M1000 680 L850 560 M850 620 L970 620" stroke-width="1.5"/>
+        <rect x="830" y="520" width="160" height="40" rx="2"/>
+        <rect x="850" y="490" width="110" height="30" rx="1"/>
+        <path d="M895 490 L905 350 L915 350 L925 490" stroke-width="2" fill="none"/>
+        <path d="M900 460 L920 460 M902 430 L918 430 M905 400 L915 400 M907 370 L913 370" stroke-width="1" fill="none"/>
+        <path d="M895 490 L925 350 M925 490 L895 350" stroke-width="0.8" fill="none"/>
+        <path d="M960 520 L990 440 M975 520 L990 440" stroke-width="2" fill="none"/>
+        <path d="M800 530 L830 530 M805 530 L810 545 M825 530 L820 545" stroke-width="2"/>
+        <polygon points="800,530 830,530 815,532" fill-opacity="0.5"/>
+        <path d="M830 540 L760 490 M830 550 L760 490" stroke-width="1.5" fill="none"/>
+        <circle cx="760" cy="490" r="3" class="platform-beacon"/>
+        <circle cx="905" cy="348" r="3" class="platform-beacon"/>
+        <!-- Platform Flare -->
+        <g class="platform-flare-group">
+          <circle class="platform-flare-glow" cx="760" cy="480" r="25" />
+          <path class="platform-flare outer-flare" d="M756 490 C745 475 750 455 760 440 C770 455 775 475 764 490 Z" />
+          <path class="platform-flare inner-flare" d="M758 490 C750 480 752 465 760 455 C768 465 770 480 762 490 Z" />
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Theme Transition Overlay -->
+  <div id="theme-transition-overlay"></div>
+
   <!-- Ambient background elements -->
   <div class="ambient-glow bg-glow-1"></div>
   <div class="ambient-glow bg-glow-2"></div>
@@ -146,7 +215,7 @@
     <header class="monitor-header">
       <h1>
         <span style="color: var(--primary);">&#x2699;</span>
-        OPERATION: BRAVO LATE-LIFE | CENTRAL COMMAND
+        ROUTINE MAINTENANCE: SCL LATE LIFE | CENTRAL COMMAND
       </h1>
       <div class="monitor-header-right">
         <div>STATUS: <span id="monitor-game-status" class="badge">LOBBY</span></div>
@@ -228,6 +297,86 @@
       <div><strong>Score Floor:</strong> Minimum 10 pts per round</div>
     </footer>
   </div>
+
+  <!-- Fireworks canvas overlay -->
+  <canvas id="fireworks-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9998;"></canvas>
+
+  <!-- Winner Announcement Modal -->
+  <div id="winner-modal" class="modal-overlay hidden">
+    <div class="winner-card glass-panel">
+      <div class="trophy-wrapper">
+        <!-- SVG Hornbill Trophy -->
+        <svg class="hornbill-trophy" viewBox="0 0 100 120" width="120" height="144">
+          <defs>
+            <linearGradient id="casqueGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="hsl(0, 85%, 50%)"/> <!-- Red -->
+              <stop offset="60%" stop-color="hsl(35, 95%, 55%)"/> <!-- Orange -->
+              <stop offset="100%" stop-color="hsl(50, 95%, 60%)"/> <!-- Yellow -->
+            </linearGradient>
+            <linearGradient id="beakGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="hsl(50, 95%, 65%)"/> <!-- Yellow -->
+              <stop offset="100%" stop-color="hsl(45, 90%, 85%)"/> <!-- Pale Ivory -->
+            </linearGradient>
+            <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="hsl(45, 90%, 65%)"/>
+              <stop offset="50%" stop-color="hsl(38, 85%, 45%)"/>
+              <stop offset="100%" stop-color="hsl(45, 95%, 30%)"/>
+            </linearGradient>
+          </defs>
+          <!-- Stand Base -->
+          <path d="M15 110 L85 110 L80 118 L20 118 Z" fill="url(#goldGrad)" stroke="hsl(38, 90%, 70%)" stroke-width="1"/>
+          <!-- Pillar -->
+          <rect x="44" y="80" width="12" height="30" fill="url(#goldGrad)"/>
+          <!-- Perch Branch -->
+          <path d="M30 76 L70 76 C72 76 72 82 70 82 L30 82 C28 82 28 76 30 76 Z" fill="hsl(210, 14%, 25%)"/>
+          <!-- Claws -->
+          <path d="M42 76 C42 80 45 80 45 76" stroke="hsl(45, 90%, 65%)" stroke-width="2" fill="none"/>
+          <path d="M54 76 C54 80 57 80 57 76" stroke="hsl(45, 90%, 65%)" stroke-width="2" fill="none"/>
+          <!-- Tail -->
+          <path d="M60 70 L75 95 L80 92 L64 68 Z" fill="hsl(210, 14%, 80%)"/>
+          <path d="M66 80 L73 90 L76 88 L69 78 Z" fill="#15171c"/>
+          <!-- Underbelly -->
+          <path d="M50 68 C54 75 62 75 64 68 Z" fill="hsl(210, 14%, 80%)"/>
+          <!-- Body -->
+          <path d="M38 52 C38 68 45 76 56 76 C65 76 68 66 65 52 C60 44 48 44 38 52 Z" fill="#15171c" stroke="hsl(210, 14%, 30%)" stroke-width="0.5"/>
+          <!-- Wing -->
+          <path d="M46 52 C46 52 50 72 60 70 C62 65 62 55 54 50 Z" fill="hsl(38, 30%, 25%)" stroke="hsl(38, 80%, 50%)" stroke-width="1"/>
+          <path d="M50 55 L58 68" stroke="hsl(38, 80%, 60%)" stroke-dasharray="3,3" stroke-width="1.5"/>
+          <!-- Neck -->
+          <path d="M38 52 C35 44 37 38 44 38 L48 38 C48 45 45 50 48 52 Z" fill="#15171c"/>
+          <!-- Head -->
+          <circle cx="44" cy="36" r="8" fill="#15171c"/>
+          <!-- Eye -->
+          <circle cx="42" cy="34" r="2" fill="hsl(45, 90%, 60%)"/>
+          <circle cx="42" cy="34" r="0.8" fill="black"/>
+          <!-- Beak -->
+          <path d="M37 34 C26 36 14 42 6 48 C14 46 26 42 37 39 Z" fill="url(#beakGrad)"/>
+          <path d="M37 39 C26 40 18 43 12 47 C20 45 28 42 37 40 Z" fill="hsl(210, 14%, 85%)"/>
+          <path d="M37 39 C26 40 14 44 6 48" stroke="hsl(38, 50%, 25%)" stroke-width="0.5" fill="none"/>
+          <!-- Casque -->
+          <path d="M37 34 C24 33 12 28 6 22 C11 16 22 6 32 6 C42 6 46 16 46 28 C42 27 39 31 37 34 Z" fill="url(#casqueGrad)"/>
+          <path d="M32 9 C24 9 15 18 10 21" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1.5" fill="none"/>
+        </svg>
+      </div>
+      <h2>VICTORY SECURED</h2>
+      <h1 id="winner-team-title">TEAM ALPHA</h1>
+      <p class="winner-tagline">Maintenance Champions!</p>
+      
+      <div class="winner-crew-box">
+        <h4>COMMENDATION ROLL CALL:</h4>
+        <div id="winner-crew-names" class="winner-crew-names">
+          <!-- Injected via JavaScript -->
+        </div>
+      </div>
+      
+      <button class="btn btn-primary" onclick="closeWinnerModal()" style="margin-top: 20px;">Acknowledge Uplink</button>
+    </div>
+  </div>
+
+  <!-- Floating Theme Toggle -->
+  <button id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle theme">
+    <span class="theme-icon">&#x2600;</span>
+  </button>
 
   <script src="leaderboard.js"></script>
 </body>

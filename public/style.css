@@ -1,9 +1,18 @@
 /* Design System & Reset */
 :root {
+  --shadow-glow: 0 0 15px var(--primary-glow);
+  --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+body.theme-dark {
   --bg-deep: hsl(222, 28%, 7%);
   --bg-panel: hsla(222, 25%, 12%, 0.65);
+  --border-light: rgba(255, 255, 255, 0.08);
+  --border-dark: rgba(0, 0, 0, 0.45);
   --border-glow: hsla(188, 85%, 45%, 0.2);
   --border-subtle: rgba(255, 255, 255, 0.06);
+  --highlight-white: rgba(255, 255, 255, 0.1);
+  --shadow-ambient: rgba(0, 0, 0, 0.5);
   
   --primary: hsl(188, 85%, 45%);
   --primary-glow: hsla(188, 85%, 45%, 0.45);
@@ -26,9 +35,43 @@
   --text-main: hsl(210, 15%, 90%);
   --text-muted: hsl(210, 10%, 65%);
   --text-dark: hsl(220, 20%, 10%);
+  --text-strong: #ffffff;
+  --bg-card: rgba(20, 24, 38, 0.75);
+}
+
+body.theme-light {
+  --bg-deep: hsl(210, 20%, 92%);
+  --bg-panel: rgba(255, 255, 255, 0.75);
+  --border-light: rgba(255, 255, 255, 0.65);
+  --border-dark: rgba(0, 0, 0, 0.12);
+  --border-glow: hsla(200, 85%, 45%, 0.25);
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --highlight-white: rgba(255, 255, 255, 0.85);
+  --shadow-ambient: rgba(0, 0, 0, 0.12);
   
-  --shadow-glow: 0 0 15px var(--primary-glow);
-  --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --primary: hsl(200, 85%, 45%);
+  --primary-glow: hsla(200, 85%, 45%, 0.35);
+  --primary-dark: hsl(200, 90%, 35%);
+  
+  --secondary: hsl(210, 14%, 40%);
+  --secondary-bg: hsla(210, 14%, 80%, 0.4);
+  
+  --success: hsl(142, 60%, 40%);
+  --success-glow: hsla(142, 60%, 40%, 0.2);
+  --success-dark: hsl(142, 60%, 25%);
+  
+  --warning: hsl(38, 85%, 45%);
+  --warning-glow: hsla(38, 85%, 45%, 0.2);
+  
+  --danger: hsl(354, 70%, 45%);
+  --danger-glow: hsla(354, 70%, 45%, 0.2);
+  --danger-dark: hsl(354, 70%, 30%);
+
+  --text-main: hsl(220, 25%, 15%);
+  --text-muted: hsl(215, 15%, 45%);
+  --text-dark: hsl(220, 20%, 98%);
+  --text-strong: hsl(220, 25%, 10%);
+  --bg-card: rgba(255, 255, 255, 0.85);
 }
 
 * {
@@ -54,6 +97,10 @@ body {
   z-index: -2;
   pointer-events: none;
   opacity: 0.15;
+}
+
+body.theme-light .ambient-glow {
+  opacity: 0.05;
 }
 
 .bg-glow-1 {
@@ -87,6 +134,10 @@ body {
   opacity: 0.8;
 }
 
+body.theme-light .grid-overlay {
+  opacity: 0.15;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 6px;
@@ -98,6 +149,9 @@ body {
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 10px;
+}
+body.theme-light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
@@ -116,13 +170,35 @@ body {
 
 .glass-panel {
   background: var(--bg-panel);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid var(--border-light);
+  border-bottom-color: var(--border-dark);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: 
+    inset 0 1px 2px var(--highlight-white),
+    0 10px 30px var(--shadow-ambient);
+  position: relative;
+  overflow: hidden;
   transition: var(--transition);
+}
+
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), transparent);
+  pointer-events: none;
+  border-radius: 11px 11px 0 0;
+  z-index: 1;
+}
+
+body.theme-light .glass-panel::before {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.25), transparent);
 }
 
 .glass-panel:hover {
@@ -160,6 +236,23 @@ body {
   outline: none;
 }
 
+body.theme-light .input-group input,
+body.theme-light .input-group select,
+body.theme-light .score-adjuster-panel input,
+body.theme-light .score-adjuster-panel select,
+body.theme-light #shared-notes {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  color: var(--text-main) !important;
+}
+
+body.theme-light .input-group input:focus,
+body.theme-light .input-group select:focus,
+body.theme-light #shared-notes:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 10px rgba(0, 180, 216, 0.1) !important;
+}
+
 .input-group input:focus,
 .input-group select:focus {
   border-color: var(--primary);
@@ -175,12 +268,32 @@ body {
   padding: 12px 24px;
   border-radius: 6px;
   cursor: pointer;
-  transition: var(--transition);
-  border: none;
   font-size: 0.95rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-top-color: rgba(255, 255, 255, 0.25);
+  border-bottom-width: 4px;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 4px 6px rgba(0, 0, 0, 0.3);
+  transform: translateY(0);
+  transition: all 0.1s ease;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 2px 3px rgba(0, 0, 0, 0.2);
+}
+
+body.theme-light .btn {
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary {
@@ -447,7 +560,7 @@ body {
 }
 
 .team-crew-col {
-  background: rgba(20, 24, 38, 0.4);
+  background: var(--secondary-bg);
   border-radius: 8px;
   padding: 15px;
   border: 1px solid var(--border-subtle);
@@ -650,7 +763,7 @@ body {
 }
 
 .rich-text h3 {
-  color: #fff;
+  color: var(--text-strong);
   font-size: 1.25rem;
   margin-bottom: 12px;
   margin-top: 15px;
@@ -674,12 +787,12 @@ body {
 }
 
 .rich-text strong {
-  color: #fff;
+  color: var(--text-strong);
 }
 
 /* Custom UI cards for manual information */
 .data-card {
-  background: rgba(20, 24, 38, 0.8);
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-left: 4px solid var(--primary);
   border-radius: 6px;
@@ -696,7 +809,7 @@ body {
 }
 
 .data-card h4 {
-  color: #fff;
+  color: var(--text-strong);
   font-size: 1rem;
   margin-bottom: 8px;
   text-transform: uppercase;
@@ -773,6 +886,8 @@ body {
   flex-direction: column;
   justify-content: space-between;
   height: 620px;
+  overflow-y: auto;
+  padding-right: 12px;
 }
 
 .panel-header {
@@ -1227,7 +1342,7 @@ body {
   font-size: 1.35rem;
   font-weight: 800;
   letter-spacing: 1.5px;
-  color: #fff;
+  color: var(--text-strong);
   text-shadow: 0 0 10px var(--primary-glow);
 }
 
@@ -1272,7 +1387,7 @@ body {
   letter-spacing: 1px;
   color: var(--primary);
   margin-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-subtle);
   padding-bottom: 6px;
 }
 
@@ -1283,7 +1398,7 @@ body {
 }
 
 .modal-score-card {
-  background: rgba(20, 24, 38, 0.6);
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 12px 6px;
@@ -1312,7 +1427,7 @@ body {
   font-family: 'Share Tech Mono', monospace;
   font-size: 1.25rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--text-strong);
 }
 
 .modal-score-card.highlighted .score-card-val {
@@ -1321,7 +1436,7 @@ body {
 }
 
 .modal-explanation-box {
-  background: rgba(9, 12, 19, 0.6);
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: 8px;
   padding: 16px;
@@ -1355,3 +1470,830 @@ body {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Theme Toggle Button */
+#theme-toggle-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--bg-panel);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border-light);
+  border-bottom: 4px solid var(--border-dark);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  box-shadow: 
+    inset 0 1px 2px var(--highlight-white),
+    0 4px 10px var(--shadow-ambient);
+  transition: all 0.1s ease;
+  outline: none;
+}
+
+#theme-toggle-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 
+    inset 0 1px 2px var(--highlight-white),
+    0 0 15px var(--primary-glow);
+}
+
+#theme-toggle-btn:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+  box-shadow: 
+    inset 0 1px 1px var(--highlight-white),
+    0 2px 5px var(--shadow-ambient);
+}
+
+.theme-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  transition: transform 0.5s ease;
+}
+
+#theme-toggle-btn:hover .theme-icon {
+  transform: rotate(30deg);
+}
+
+/* Theme Transition Overlay */
+#theme-transition-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  pointer-events: none;
+  background: var(--bg-deep);
+  opacity: 0;
+  transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+#theme-transition-overlay.animating {
+  opacity: 1;
+}
+
+/* Page Warp/Pulse effect on Theme Change */
+body.theme-toggling .terminal-grid,
+body.theme-toggling .monitor-container {
+  animation: themeSwitchWarp 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes themeSwitchWarp {
+  0% {
+    transform: scale(1);
+    filter: blur(0px);
+  }
+  35% {
+    transform: scale(0.98) rotate(-0.2deg);
+    filter: blur(1.5px) brightness(1.1);
+  }
+  70% {
+    transform: scale(1.005) rotate(0.2deg);
+    filter: blur(0.5px) brightness(0.95);
+  }
+  100% {
+    transform: scale(1);
+    filter: blur(0px);
+  }
+}
+
+/* Button Squeeze/Spin Animation on click */
+#theme-toggle-btn.clicked {
+  animation: btnClickWiggle 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes btnClickWiggle {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(0.7) rotate(-90deg);
+  }
+  80% {
+    transform: scale(1.15) rotate(10deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Winner Announcement Modal */
+#winner-modal {
+  z-index: 9990;
+}
+
+.winner-card {
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+  padding: 40px 30px;
+  border: 1px solid var(--border-glow);
+  box-shadow: 0 0 50px rgba(243, 156, 18, 0.4);
+  animation: slideInScale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.trophy-wrapper {
+  margin-bottom: 15px;
+  filter: drop-shadow(0 0 15px rgba(243, 156, 18, 0.4));
+  animation: floatTrophy 3s ease-in-out infinite;
+}
+
+.hornbill-trophy {
+  display: block;
+}
+
+#winner-team-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, hsl(38, 92%, 60%), hsl(38, 92%, 40%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(243, 156, 18, 0.2);
+}
+
+.winner-tagline {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.winner-crew-box {
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px dashed var(--border-subtle);
+  border-radius: 8px;
+  padding: 15px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.winner-crew-box h4 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.winner-crew-names {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+@keyframes floatTrophy {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0); }
+}
+
+/* ================= GAME BACKDROP GRAPHICS ================= */
+.game-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.backdrop-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Day/Night Sky & Sea transitions */
+body.theme-dark .backdrop-sky {
+  fill: url(#darkSkyGrad);
+  transition: fill 1.2s ease;
+}
+body.theme-light .backdrop-sky {
+  fill: url(#lightSkyGrad);
+  transition: fill 1.2s ease;
+}
+
+body.theme-dark .backdrop-sea {
+  fill: hsl(222, 28%, 9%);
+  transition: fill 1.2s ease;
+}
+body.theme-light .backdrop-sea {
+  fill: hsl(205, 22%, 76%);
+  transition: fill 1.2s ease;
+}
+
+body.theme-dark .backdrop-sea-highlight {
+  fill: hsl(222, 28%, 12%);
+  transition: fill 1.2s ease;
+}
+body.theme-light .backdrop-sea-highlight {
+  fill: hsl(205, 22%, 80%);
+  transition: fill 1.2s ease;
+}
+
+/* Oil Platform Silhouette details */
+body.theme-dark .backdrop-platform {
+  fill: hsl(222, 18%, 6%);
+  stroke: hsl(222, 18%, 12%);
+  transition: fill 1.2s, stroke 1.2s;
+}
+body.theme-light .backdrop-platform {
+  fill: hsl(205, 12%, 35%);
+  stroke: hsl(205, 12%, 40%);
+  transition: fill 1.2s, stroke 1.2s;
+}
+
+/* Flashing warning beacons on the platform */
+.platform-beacon {
+  fill: hsl(0, 100%, 60%);
+  animation: beaconPulse 1.8s infinite alternate;
+}
+@keyframes beaconPulse {
+  0% { opacity: 0.2; r: 2; }
+  100% { opacity: 1; r: 4.5; }
+}
+
+/* Sun & Moon dynamic translation / rise-fall */
+.backdrop-sun,
+.backdrop-sun-glow {
+  fill: hsl(42, 95%, 60%);
+  transform-origin: 250px 150px;
+  transition: transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.backdrop-sun-glow {
+  opacity: 0.15;
+}
+
+.backdrop-moon-group {
+  transform-origin: 1190px 150px;
+  transition: transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.backdrop-moon {
+  fill: hsl(210, 14%, 85%);
+}
+.backdrop-moon-glow {
+  fill: hsl(210, 14%, 85%);
+  opacity: 0.12;
+}
+
+/* Placement changes for Day/Night themes */
+body.theme-light .backdrop-sun,
+body.theme-light .backdrop-sun-glow {
+  transform: translate(0, 0) scale(1);
+  opacity: 1;
+}
+body.theme-light .backdrop-moon-group {
+  transform: translate(180px, 350px) scale(0.3);
+  opacity: 0;
+}
+
+body.theme-dark .backdrop-sun,
+body.theme-dark .backdrop-sun-glow {
+  transform: translate(-180px, 350px) scale(0.3);
+  opacity: 0;
+}
+body.theme-dark .backdrop-moon-group {
+  transform: translate(0, 0) scale(1);
+  opacity: 1;
+}
+
+
+/* ================= LEADERBOARD STORAGE TANKS ================= */
+.leaderboard-tanks {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  height: 310px;
+  width: 100%;
+  margin-top: 15px;
+  gap: 15px;
+}
+
+.tank-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 120px;
+  height: 100%;
+}
+
+.tank-label {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  color: var(--text-main);
+  text-align: center;
+}
+
+.glass-tank {
+  width: 66px;
+  height: 190px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px 24px 8px 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    inset 0 0 20px rgba(255, 255, 255, 0.04),
+    0 10px 20px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+}
+
+/* Glass reflections */
+.glass-tank::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 5px;
+  width: 8px;
+  height: 100%;
+  background: linear-gradient(to right, rgba(255,255,255,0.15), rgba(255,255,255,0));
+  border-radius: 4px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Volumetric scale line marker ticks */
+.tank-scale {
+  position: absolute;
+  top: 10px;
+  right: 6px;
+  height: calc(100% - 20px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  opacity: 0.55;
+  z-index: 2;
+  pointer-events: none;
+  text-align: right;
+  line-height: 1;
+}
+
+/* Volumetric liquid inside */
+.tank-liquid {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 5%; /* Set dynamically */
+  transition: height 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+  opacity: 0.82;
+  z-index: 1;
+}
+
+/* Liquid Wave animation replaced with static 3D top cap highlight */
+.liquid-wave {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  animation: none;
+  opacity: 0.9;
+}
+
+/* Bubbles inside tank */
+.bubble {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  bottom: -10px;
+  animation: bubbleFloat 3s infinite ease-in;
+  pointer-events: none;
+}
+.bubble.b1 { width: 3.5px; height: 3.5px; left: 20%; animation-duration: 2.8s; animation-delay: 0.1s; }
+.bubble.b2 { width: 5px; height: 5px; left: 50%; animation-duration: 3.8s; animation-delay: 0.6s; }
+.bubble.b3 { width: 3px; height: 3px; left: 75%; animation-duration: 2.2s; animation-delay: 1.2s; }
+
+@keyframes bubbleFloat {
+  0% { transform: translateY(0) scale(1); opacity: 0; }
+  10% { opacity: 0.4; }
+  90% { opacity: 0.4; }
+  100% { transform: translateY(-170px) scale(0.6); opacity: 0; }
+}
+
+/* Floating Badge inside tube */
+.tank-float-badge {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  z-index: 3;
+  pointer-events: none;
+  transition: bottom 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.tank-float-badge .badge-val {
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid var(--border-glow);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-main);
+  box-shadow: 0 0 8px rgba(0,0,0,0.5);
+  backdrop-filter: blur(1.5px);
+  white-space: nowrap;
+}
+
+/* Team-specific Liquid Colors and Glows */
+.tank-alpha .tank-liquid {
+  background: linear-gradient(to top, hsl(190, 85%, 35%), hsl(190, 85%, 55%));
+  box-shadow: 0 0 10px rgba(0, 180, 216, 0.25);
+}
+.tank-beta .tank-liquid {
+  background: linear-gradient(to top, hsl(280, 80%, 40%), hsl(280, 80%, 60%));
+  box-shadow: 0 0 10px rgba(155, 89, 182, 0.25);
+}
+.tank-gamma .tank-liquid {
+  background: linear-gradient(to top, hsl(30, 95%, 35%), hsl(30, 95%, 55%));
+  box-shadow: 0 0 10px rgba(243, 156, 18, 0.25);
+}
+.tank-delta .tank-liquid {
+  background: linear-gradient(to top, hsl(120, 70%, 30%), hsl(120, 70%, 50%));
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.25);
+}
+
+/* Cylinder Base Structure */
+.tank-base {
+  width: 86px;
+  background: linear-gradient(185deg, hsl(210, 14%, 25%), hsl(210, 14%, 16%));
+  border: 1px solid var(--border-subtle);
+  border-top-color: var(--border-light);
+  border-radius: 6px 6px 12px 12px;
+  padding: 8px 4px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 
+    inset 0 1px 1px rgba(255,255,255,0.08),
+    0 5px 12px rgba(0,0,0,0.35);
+}
+
+.base-led-score {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--primary);
+  text-shadow: 0 0 8px var(--primary);
+  background: rgba(0,0,0,0.45);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(0,0,0,0.45);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.75);
+}
+
+.facility-icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* Team Specific Led glows */
+.tank-alpha .base-led-score { color: hsl(190, 85%, 55%); text-shadow: 0 0 6px hsl(190, 85%, 55%); }
+.tank-beta .base-led-score { color: hsl(280, 80%, 60%); text-shadow: 0 0 6px hsl(280, 80%, 60%); }
+.tank-gamma .base-led-score { color: hsl(30, 95%, 55%); text-shadow: 0 0 6px hsl(30, 95%, 55%); }
+.tank-delta .base-led-score { color: hsl(120, 70%, 50%); text-shadow: 0 0 6px hsl(120, 70%, 50%); }
+
+.tank-alpha .facility-icon { fill: hsl(190, 85%, 55%); }
+.tank-beta .facility-icon { fill: hsl(280, 80%, 60%); }
+.tank-gamma .facility-icon { fill: hsl(30, 95%, 55%); }
+.tank-delta .facility-icon { fill: hsl(120, 70%, 50%); }
+
+/* Offshore Platform Flare Animation */
+.platform-flare-group {
+  pointer-events: none;
+}
+.platform-flare-glow {
+  fill: url(#flareGrad);
+  transform-origin: 760px 480px;
+  animation: flareGlowPulse 2s infinite ease-in-out alternate;
+}
+.platform-flare.outer-flare {
+  fill: url(#flareOuterGrad);
+  transform-origin: 760px 490px;
+  animation: flareFlicker 0.12s infinite alternate ease-in-out;
+}
+.platform-flare.inner-flare {
+  fill: url(#flareInnerGrad);
+  transform-origin: 760px 490px;
+  animation: flareFlicker 0.08s infinite alternate-reverse ease-in-out;
+}
+
+@keyframes flareFlicker {
+  0% {
+    transform: scale(0.92, 0.88) skewX(-2deg);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.08, 1.15) skewX(3deg);
+    opacity: 1;
+  }
+}
+@keyframes flareGlowPulse {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0.95;
+  }
+}
+
+/* Facilitator Tips & Hints Panel */
+.tips-panel {
+  margin-top: 15px;
+  padding: 15px;
+  border: 1px solid rgba(0, 229, 255, 0.25) !important;
+}
+.tips-panel h4 {
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+#fac-tips-content {
+  color: var(--text-muted);
+  line-height: 1.45;
+  font-size: 0.85rem;
+}
+
+/* ================= THEME ADJUSTMENTS & NEW OVERLAYS ================= */
+
+/* Light theme overrides for modals/banners */
+body.theme-light .modal-overlay {
+  background-color: rgba(240, 242, 245, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+body.theme-light .modal-header h2 {
+  text-shadow: none;
+}
+
+body.theme-light .modal-score-card.highlighted {
+  background: rgba(0, 180, 216, 0.08);
+}
+
+body.theme-light .modal-score-card.highlighted .score-card-val {
+  text-shadow: none;
+}
+
+body.theme-light .notification-banner {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+body.theme-light .winner-crew-box {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Countdown Overlay Styling */
+.countdown-card {
+  max-width: 400px;
+  width: 90%;
+  padding: 40px;
+  text-align: center;
+  border: 1px solid var(--border-glow);
+  box-shadow: 0 20px 50px var(--shadow-ambient);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  animation: slideInScale 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.countdown-title {
+  font-size: 1rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+.countdown-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 6rem;
+  font-weight: 800;
+  color: var(--warning);
+  text-shadow: 0 0 20px var(--warning-glow);
+  animation: countdownPulse 1s ease-in-out infinite;
+  line-height: 1;
+}
+
+@keyframes countdownPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+body.theme-light .countdown-value {
+  text-shadow: none;
+}
+
+.countdown-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-main);
+  opacity: 0.85;
+}
+
+/* Pause Overlay Styling */
+.pause-card {
+  max-width: 450px;
+  width: 90%;
+  padding: 40px 30px;
+  text-align: center;
+  border: 1px solid var(--border-glow);
+  box-shadow: 0 20px 50px var(--shadow-ambient);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  animation: slideInScale 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.pause-icon {
+  font-size: 3rem;
+  color: var(--primary);
+  animation: floatTrophy 3s ease-in-out infinite;
+}
+
+.pause-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-strong);
+  letter-spacing: 1.5px;
+}
+
+.pause-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Player Scoring Dashboard Styling */
+.scoring-dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.scoring-dash-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glow);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 15px var(--shadow-ambient);
+  transition: var(--transition);
+}
+
+.scoring-dash-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 4px 20px rgba(0, 180, 216, 0.15);
+}
+
+.dash-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.dash-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--primary);
+  text-shadow: 0 0 10px var(--primary-glow);
+}
+
+body.theme-light .dash-value {
+  text-shadow: none;
+}
+
+/* Light theme overrides for terminal-header, cheat sheets, options, and tanks */
+body.theme-light .terminal-header {
+  background: var(--bg-panel);
+  border-color: var(--border-light);
+  box-shadow: 0 4px 15px var(--shadow-ambient);
+}
+
+body.theme-light .header-center h2 {
+  color: var(--text-strong);
+}
+
+body.theme-light .clock-font {
+  color: var(--text-strong);
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--border-subtle);
+}
+
+.control-card ul li strong {
+  color: var(--text-strong);
+}
+
+.fac-select-input {
+  width: 100%;
+  background: var(--bg-panel);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+  padding: 8px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+  transition: var(--transition);
+}
+
+.fac-select-input:focus {
+  border-color: var(--primary);
+}
+
+.radio-option-lbl {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.9rem;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.radio-option-lbl:hover {
+  background: rgba(0, 180, 216, 0.05);
+  border-color: var(--primary);
+}
+
+body.theme-light .radio-option-lbl {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+body.theme-light .radio-option-lbl:hover {
+  background: rgba(0, 180, 216, 0.05);
+  border-color: var(--primary);
+}
+
+body.theme-light .glass-tank {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.15);
+  box-shadow: 
+    inset 0 0 20px rgba(0, 0, 0, 0.02),
+    0 10px 20px rgba(0, 0, 0, 0.08);
+}
+
+.puzzle-mode-selector-wrap {
+  margin: 15px 0;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 6px;
+  border: 1px dashed var(--border-subtle);
+}
+
+body.theme-light .puzzle-mode-selector-wrap {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: var(--border-subtle);
+}
+
+
+
+
+

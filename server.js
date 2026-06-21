@@ -15,10 +15,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Global Game State
 let gameState = {
   status: 'lobby', // lobby, active, end_round, game_over
-  currentRound: 1, // 1 to 5, 6 is tie-breaker
+  currentRound: 1,
+  finalRound: 9, // default to 9
   timer: 0,
   timerActive: false,
   puzzleMode: 'standard', // 'standard' or 'objective'
+  startingCountdown: false,
   teams: {
     alpha: { id: 'alpha', name: 'Team Alpha', score: 0, notes: '', draftAnswers: {}, roundStatus: {} },
     beta: { id: 'beta', name: 'Team Beta', score: 0, notes: '', draftAnswers: {}, roundStatus: {} },
@@ -31,6 +33,7 @@ let gameState = {
 
 // Timer interval
 let timerInterval = null;
+let countdownTimeout = null;
 
 // Puzzles & Answers
 const puzzles = {
@@ -56,7 +59,7 @@ const puzzles = {
       "-$1,000/week"
     ],
     solutionExplanation: "Action A (Digitized PTW) is the optimal decision. Wrench time increases by 10 hours (from 10 to 20 hours/week) due to a reduction in permit delays. Net Economic Gain = (10 hours increase * $1,000 value/hour) - $1,000 cost = $9,000. Action B yields a net gain of $3,000 (5 hours * $1k - $2k cost). Action C yields a net gain of -$1,000 (2 hours * $1k - $3k cost).",
-    complianceExplanation: "This aligns with the Shell Performance Framework (Wrench Time Optimization) by prioritizing the elimination of administrative bottlenecks (Permit to Work delay) to maximize direct tool time."
+    complianceExplanation: "This aligns with the SCL Asset Performance Framework (Wrench Time Optimization) by prioritizing the elimination of administrative bottlenecks (Permit to Work delay) to maximize direct tool time."
   },
   2: {
     title: "Round 2: Maintenance Backlog & Campaign Scheduling",
@@ -79,7 +82,7 @@ const puzzles = {
       "$12,000"
     ],
     solutionExplanation: "Campaign Maintenance using 8 technicians is the optimal schedule. Planning efficiency reduces the 100 hours backlog to 80 hours. 8 technicians working 10 hours each provide exactly 80 hours of capacity. Total Cost = 8 technicians * $1,000/tech + $1,000 campaign fee = $9,000. Reactive scheduling requires 10 technicians and costs $10,000.",
-    complianceExplanation: "This complies with EN 15341-2019 (Workforce Scheduling Efficiency) and IAM SSG 1517 (Backlog Management) by demonstrating that structured campaign scheduling yields greater labor optimization than reactive maintenance."
+    complianceExplanation: "This complies with SCL Late Life Campaign Scheduling guidelines and backlog management standards by showing that planned campaigns optimize labor expenditures."
   },
   3: {
     title: "Round 3: Preventive Maintenance (PM) Compliance & Execution",
@@ -103,7 +106,7 @@ const puzzles = {
       "8 hours"
     ],
     solutionExplanation: "The PM execution must start on Day 2 and takes 6 hours. Day 2 is the only day satisfying crane access (Days 1-2), process window (Days 2-3), and vendor availability (Day 2 ONLY). The total duration is 6 hours (1-hour safety brief + 4-hour mechanical work + 1-hour clean-up).",
-    complianceExplanation: "This satisfies Shell HSE Compliance Standards by integrating mandatory safety briefs and clean-ups into the vendor work window, preventing unauthorized execution outside vendor availability."
+    complianceExplanation: "This satisfies SCL HSE Compliance Standards by integrating mandatory safety briefs and clean-ups into the vendor work window, preventing unauthorized execution outside vendor availability."
   },
   4: {
     title: "Round 4: Planning & Preparation Quality (Plan Quality Index)",
@@ -128,34 +131,125 @@ const puzzles = {
       "5 hours"
     ],
     solutionExplanation: "The Plan Quality Index (PQI) is 80% (4 of 5 steps completed). This reduces the planned 10-hour wrench time to 8 hours (10 * 80%). The logistics coordinator must prepare 5 material kits (1 for each of the 5 valves in the campaign).",
-    complianceExplanation: "This illustrates the Shell Performance Framework's preparation gate checklist, where planning readiness (PQI) directly correlates to workforce execution quality."
+    complianceExplanation: "This illustrates the SCL Maintenance Excellence preparation gate checklist, where planning readiness (PQI) directly correlates to workforce execution quality."
   },
   5: {
-    title: "Round 5: Wrench Time Measurement & Workforce Productivity",
+    title: "Round 5: Subsea Well Decommissioning Strategy (LLAM)",
     verify: (answers) => {
-      const productivity = (answers.productivity || '').trim().toLowerCase();
-      const wrenchTime = parseInt(answers.wrenchTime, 10);
-      const laborValue = parseInt(String(answers.laborValue).replace(/[\$,]/g, ''), 10);
-      return productivity === 'high' && wrenchTime === 50 && laborValue === 2000;
+      const strategy = (answers.strategy || '').trim().toUpperCase();
+      const cost = parseInt(String(answers.cost).replace(/[\$,]/g, ''), 10);
+      return strategy === 'C' && cost === 35000;
     },
-    correctQ1: '0',
-    correctQ2: '1',
+    correctQ1: '2',
+    correctQ2: '2',
     q1Options: [
-      "High Productivity",
-      "Medium Productivity",
-      "Low Productivity"
+      "Immediate Plug & Abandonment (Option A)",
+      "5-Year Wet Suspension (Option B)",
+      "Liability Transfer Sale (Option C)"
     ],
     q2Options: [
-      "$1,000",
-      "$2,000",
-      "$3,000",
-      "$5,000"
+      "$50,000",
+      "$85,000",
+      "$35,000",
+      "$25,000"
     ],
-    solutionExplanation: "Wrench Time is 50% (50 direct work observations / 100 total observations), placing the crew in the High productivity category (>=50%). The productive labor value gained is $2,000 (calculated as [50% - 30% baseline] = 20% gain * $10,000 weekly labor cost).",
-    complianceExplanation: "This is supported by EN 15341 (O8 Workforce Productivity Indicator), utilizing systematic work sampling observations to classify and value productive labor gains against historical baselines."
+    solutionExplanation: "Option C (Liability Transfer Sale) is the most cost-efficient decommissioning strategy. Option A costs $50,000 (5 wells * $10k/well). Option B costs $85,000 (Suspension cost: $25k + future P&A: $60k). Option C costs $35,000 (Transaction cost: $25k + liability transfer fee: $10k).",
+    complianceExplanation: "This follows SCL Late Life Asset Decommissioning Guidelines (LLAD-05), which permit transfer of liability to niche operators to mitigate decommissioning liabilities."
   },
   6: {
-    title: "Tie-Breaker Round: Shell Maintenance Execution Cycle",
+    title: "Round 6: Turbine Bearing Spare Parts Logistics (MMS)",
+    verify: (answers) => {
+      const option = (answers.option || '').trim().toUpperCase();
+      const cost = parseInt(String(answers.cost).replace(/[\$,]/g, ''), 10);
+      return option === 'A' && cost === 1500;
+    },
+    correctQ1: '0',
+    correctQ2: '0',
+    q1Options: [
+      "Local Warehouse Stocking (Option A)",
+      "Central Hub Ordering (Option B)",
+      "Shared Inventory Pool (Option C)"
+    ],
+    q2Options: [
+      "$1,500",
+      "$2,500",
+      "$1,750",
+      "$0"
+    ],
+    solutionExplanation: "Option A (Local Stock) is optimal with an expected cost of $1,500/week. Option B (Central Hub) expected cost is $2,500/week (50% risk of stockout * $5,000 downtime). Option C (Shared Pool) expected cost is $1,750/week ($500 membership fee + 50% * $2,500 downtime).",
+    complianceExplanation: "This complies with SCL Material Management Standards (MMS-06) by prioritizing high-criticality spares local storage over delayed-delivery configurations."
+  },
+  7: {
+    title: "Round 7: Piping Corrosion Inspection (NII)",
+    verify: (answers) => {
+      const strategy = (answers.strategy || '').trim().toUpperCase();
+      const cost = parseInt(String(answers.cost).replace(/[\$,]/g, ''), 10);
+      return strategy === 'B' && cost === 10000;
+    },
+    correctQ1: '1',
+    correctQ2: '1',
+    q1Options: [
+      "Manual Stripping & UT (Option A)",
+      "Pulsed Eddy Current (Option B)",
+      "Visual Inspection Only (Option C)"
+    ],
+    q2Options: [
+      "$11,000",
+      "$10,000",
+      "$17,000",
+      "$6,000"
+    ],
+    solutionExplanation: "Option B (Pulsed Eddy Current) minimizes total expected cost at $10,000 ($6k inspection + $4k risk penalty). Option A (Manual Stripping) costs $11,000 ($10k inspection + $1k risk). Option C (Visual) costs $17,000 ($1k inspection + $16k risk).",
+    complianceExplanation: "This follows SCL Non-Intrusive Inspection (NII) guidelines, using pulsed eddy current scan arrays to test piping integrity without full insulation stripping costs."
+  },
+  8: {
+    title: "Round 8: ESD Valve Testing Interval (Safety Critical Elements)",
+    verify: (answers) => {
+      const interval = (answers.interval || '').trim().toUpperCase();
+      const cost = parseInt(String(answers.cost).replace(/[\$,]/g, ''), 10);
+      return (interval === '6 MONTHS' || interval === '6-MONTH' || interval === '6') && cost === 4000;
+    },
+    correctQ1: '1',
+    correctQ2: '0',
+    q1Options: [
+      "3-Month Interval (Option C)",
+      "6-Month Interval (Option A)",
+      "12-Month Interval (Option B)"
+    ],
+    q2Options: [
+      "$4,000",
+      "$2,000",
+      "$8,000",
+      "$0"
+    ],
+    solutionExplanation: "Option A (6-Month Testing) is the most cost-effective compliant testing frequency. It costs $4,000/year and maintains PFD at 0.010, which meets the safety critical limits (PFD <= 0.015). Option B (12-Month) fails safety criteria (PFD 0.020). Option C (3-Month) is compliant but over-tests at a cost of $8,000.",
+    complianceExplanation: "This adheres to SCL Safety Critical System integrity protocols where testing intervals are systematically balanced against failure probability thresholds."
+  },
+  9: {
+    title: "Round 9: Operator Competency & Flaring Prevention (Operations Excellence)",
+    verify: (answers) => {
+      const method = (answers.method || '').trim().toUpperCase();
+      const cost = parseInt(String(answers.cost).replace(/[\$,]/g, ''), 10);
+      return method === 'A' && cost === 5000;
+    },
+    correctQ1: '0',
+    correctQ2: '0',
+    q1Options: [
+      "Simulator-Based (Option A)",
+      "Classroom Lecture (Option B)",
+      "On-the-Job Mentoring (Option C)"
+    ],
+    q2Options: [
+      "$5,000",
+      "$11,000",
+      "$15,000",
+      "$3,000"
+    ],
+    solutionExplanation: "Option A (Simulator Training) is the optimal investment, yielding $5,000 total expected cost ($3,000 training + 0.02 P(flare) * $100,000 penalty = $2,000). Option B costs $11,000 ($1,000 + 0.10 * $100,000). Option C costs $15,000 ($0 + 0.15 * $100,000).",
+    complianceExplanation: "This demonstrates SCL Environmental Performance standards by showing that advanced simulator certifications minimize emissions and flare penalties."
+  },
+  10: {
+    title: "Tie-Breaker Round: SCL Maintenance Execution Cycle",
     verify: (answers) => {
       const sequence = answers.sequence || [];
       const correctSequence = [
@@ -188,8 +282,8 @@ const puzzles = {
       "Step 6: Execute & Monitor",
       "Step 7: Close & Document"
     ],
-    solutionExplanation: "The correct 8-step Shell Maintenance Execution Cycle is: 1. Identify & Define, 2. Approve & Prioritize, 3. Plan & Prepare, 4. Schedule & Align, 5. Permit & Authorize, 6. Execute & Monitor, 7. Close & Document, 8. Review & Improve.",
-    complianceExplanation: "This sequence represents the standard Shell Maintenance Execution Cycle (ME) workflow, showing compliance by requiring authorization before execution and closing before post-job review."
+    solutionExplanation: "The correct 8-step SCL Maintenance Execution Cycle is: 1. Identify & Define, 2. Approve & Prioritize, 3. Plan & Prepare, 4. Schedule & Align, 5. Permit & Authorize, 6. Execute & Monitor, 7. Close & Document, 8. Review & Improve.",
+    complianceExplanation: "This sequence represents the standard SCL Maintenance Execution workflow, showing compliance by requiring permit authorization before physical execution and final close-out documentation before review."
   }
 };
 
@@ -203,7 +297,7 @@ function formatSubmittedAnswers(roundNum, submittedAnswers, puzzleMode) {
     const q2Text = pz && pz.q2Options && pz.q2Options[q2Idx] !== undefined ? pz.q2Options[q2Idx] : (submittedAnswers.q2 || 'None selected');
     return `Q1: "${q1Text}", Q2: "${q2Text}"`;
   } else {
-    if (roundNum === 6) {
+    if (roundNum === 10) {
       const seq = submittedAnswers.sequence || [];
       return `Sequence: [${seq.join(' > ')}]`;
     }
@@ -439,10 +533,12 @@ io.on('connection', (socket) => {
 
   // Facilitator controls: Set Puzzle Mode
   socket.on('set-puzzle-mode', (mode) => {
-    if (isAdmin(socket.id) && gameState.status === 'lobby') {
-      if (mode === 'standard' || mode === 'objective') {
+    if (isAdmin(socket.id)) {
+      const canChange = (gameState.status === 'lobby' || gameState.status === 'end_round' || (gameState.status === 'active' && gameState.timer === 0 && !gameState.timerActive));
+      if (canChange && (mode === 'standard' || mode === 'objective')) {
         gameState.puzzleMode = mode;
         console.log(`Puzzle Mode set to ${mode} by facilitator`);
+        io.to('facilitators').emit('facilitator-log', `Puzzle Mode set to ${mode === 'standard' ? 'Standard' : 'Objective'} Mode`);
         broadcastGameState();
       }
     }
@@ -474,20 +570,40 @@ io.on('connection', (socket) => {
 
   // Facilitator controls: Start Round Timer
   socket.on('start-round-timer', () => {
-    if (isAdmin(socket.id) && !gameState.timerActive && gameState.status === 'active') {
-      gameState.timerActive = true;
-      timerInterval = setInterval(() => {
-        gameState.timer += 1;
-        io.emit('timer-tick', gameState.timer);
-      }, 1000);
-      io.to('facilitators').emit('facilitator-log', `Timer started for Round ${gameState.currentRound}`);
-      broadcastGameState();
+    if (isAdmin(socket.id) && !gameState.timerActive && gameState.status === 'active' && !gameState.startingCountdown) {
+      if (gameState.timer === 0) {
+        // Enter 5-second countdown phase
+        gameState.startingCountdown = true;
+        broadcastGameState();
+
+        if (countdownTimeout) clearTimeout(countdownTimeout);
+        countdownTimeout = setTimeout(() => {
+          countdownTimeout = null;
+          gameState.startingCountdown = false;
+          gameState.timerActive = true;
+          timerInterval = setInterval(() => {
+            gameState.timer += 1;
+            io.emit('timer-tick', gameState.timer);
+          }, 1000);
+          io.to('facilitators').emit('facilitator-log', `Timer started for Round ${gameState.currentRound}`);
+          broadcastGameState();
+        }, 5000);
+      } else {
+        // Resume timer immediately (no countdown)
+        gameState.timerActive = true;
+        timerInterval = setInterval(() => {
+          gameState.timer += 1;
+          io.emit('timer-tick', gameState.timer);
+        }, 1000);
+        io.to('facilitators').emit('facilitator-log', `Timer resumed for Round ${gameState.currentRound}`);
+        broadcastGameState();
+      }
     }
   });
 
   // Facilitator controls: Pause Round Timer
   socket.on('pause-round-timer', () => {
-    if (isAdmin(socket.id) && gameState.timerActive) {
+    if (isAdmin(socket.id) && (gameState.timerActive || gameState.startingCountdown)) {
       stopTimer();
       io.to('facilitators').emit('facilitator-log', `Timer paused for Round ${gameState.currentRound}`);
       broadcastGameState();
@@ -507,9 +623,9 @@ io.on('connection', (socket) => {
   socket.on('next-round', () => {
     if (isAdmin(socket.id) && gameState.status === 'end_round') {
       const lastRound = gameState.currentRound;
+      const finalRound = gameState.finalRound || 9;
       
-      // Determine next round (Round 1-5 default, tie-breaker check)
-      if (lastRound < 5) {
+      if (lastRound < finalRound) {
         gameState.currentRound += 1;
         gameState.status = 'active';
         gameState.timer = 0;
@@ -518,21 +634,21 @@ io.on('connection', (socket) => {
         gameState.roundEndCompliance = '';
         initRoundStates(gameState.currentRound);
         io.to('facilitators').emit('facilitator-log', `Advanced to Round ${gameState.currentRound}`);
-      } else if (lastRound === 5) {
+      } else if (lastRound === finalRound) {
         // Evaluate tie-breaker condition
         const scores = Object.values(gameState.teams).map(t => t.score);
         const maxScore = Math.max(...scores);
         const winners = Object.values(gameState.teams).filter(t => t.score === maxScore);
 
         if (winners.length > 1) {
-          // Trigger tie-breaker!
-          gameState.currentRound = 6;
+          // Trigger tie-breaker! (Round 10)
+          gameState.currentRound = 10;
           gameState.status = 'active';
           gameState.timer = 0;
           gameState.timerActive = false;
           gameState.roundEndExplanation = '';
           gameState.roundEndCompliance = '';
-          initRoundStates(6);
+          initRoundStates(10);
           io.to('facilitators').emit('facilitator-log', `Tie detected between ${winners.map(w => w.name).join(' and ')}! Loading Tie-Breaker Round.`);
         } else {
           // Game Over - clear winner
@@ -540,12 +656,12 @@ io.on('connection', (socket) => {
           io.to('facilitators').emit('facilitator-log', `Game over! Winner is ${winners[0].name} with ${winners[0].score} points!`);
         }
       } else {
-        // If tie-breaker finished, check winner of tie-breaker
+        // If tie-breaker (Round 10) finished, check winner of tie-breaker
         // In tie-breaker, the first team to solve wins the game immediately
-        const tieBreakerSolvers = Object.entries(gameState.teams).filter(([id, t]) => t.roundStatus[6]?.solved);
+        const tieBreakerSolvers = Object.entries(gameState.teams).filter(([id, t]) => t.roundStatus[10]?.solved);
         if (tieBreakerSolvers.length > 0) {
           // First solver is winner
-          const sortedSolvers = tieBreakerSolvers.sort((a, b) => (a[1].roundStatus[6].timeTaken || 9999) - (b[1].roundStatus[6].timeTaken || 9999));
+          const sortedSolvers = tieBreakerSolvers.sort((a, b) => (a[1].roundStatus[10].timeTaken || 9999) - (b[1].roundStatus[10].timeTaken || 9999));
           const winnerTeam = sortedSolvers[0][1];
           gameState.status = 'game_over';
           io.to('facilitators').emit('facilitator-log', `Tie-breaker complete! Winner is ${winnerTeam.name}!`);
@@ -555,6 +671,19 @@ io.on('connection', (socket) => {
         }
       }
       broadcastGameState();
+    }
+  });
+
+  // Facilitator controls: Set Final Round
+  socket.on('set-final-round', (val) => {
+    if (isAdmin(socket.id) && gameState.status === 'lobby') {
+      const fr = parseInt(val, 10);
+      if (fr >= 1 && fr <= 9) {
+        gameState.finalRound = fr;
+        console.log(`Final Round set to ${fr} by facilitator`);
+        io.to('facilitators').emit('facilitator-log', `Final Round set to Round ${fr}`);
+        broadcastGameState();
+      }
     }
   });
 
@@ -621,6 +750,11 @@ function stopTimer() {
     clearInterval(timerInterval);
     timerInterval = null;
   }
+  if (countdownTimeout) {
+    clearTimeout(countdownTimeout);
+    countdownTimeout = null;
+  }
+  gameState.startingCountdown = false;
   gameState.timerActive = false;
 }
 

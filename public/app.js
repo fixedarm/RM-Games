@@ -8,6 +8,8 @@ let currentTab = 'tab-brief';
 let activeRound = 1;
 let isLeader = false;
 let dismissedReportRound = 0;
+let lastPuzzleModeVal = 'normal';
+let lastFinalRoundVal = 9;
 
 // UI Panels
 const lobbyScreen = document.getElementById('lobby-screen');
@@ -19,8 +21,30 @@ const notificationText = document.getElementById('notification-text');
 // System Manual Database
 const roundsData = {
   1: {
+    tips: `<strong>Round 1 Tips:</strong> Action A (Digitized PTW) is the optimal decision. Wrench time increases from 10 to 20 hours/week. Net Economic Gain = (10 hrs * $1,000/hr) - $1,000 cost = $9,000. Action B yields a net gain of $3,000. Action C yields -$1,000. Correct answer: <strong>A, 20, $9,000</strong>.`,
     brief: `
       <h3>Round 1: Wrench Time Optimization & PTW Bottlenecks</h3>
+      <div class="round-graphic" style="margin: 15px 0; text-align: center;">
+        <svg viewBox="0 0 500 150" style="width: 100%; max-width: 500px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-family: var(--font-mono), monospace;">
+          <text x="15" y="25" fill="#fff" font-size="12" font-weight="600">Workforce Improvement Packages</text>
+          
+          <rect x="100" y="45" width="220" height="20" rx="3" fill="url(#r1-blue)" stroke="#00b4d8" stroke-width="1"/>
+          <text x="15" y="59" fill="var(--text-muted)" font-size="11">Action A</text>
+          <text x="110" y="59" fill="#fff" font-size="10">Digitized PTW Workflow</text>
+          
+          <rect x="100" y="75" width="220" height="20" rx="3" fill="url(#r1-blue)" stroke="#00b4d8" stroke-width="1"/>
+          <text x="15" y="89" fill="var(--text-muted)" font-size="11">Action B</text>
+          <text x="110" y="89" fill="#fff" font-size="10">Pre-kitting Bins</text>
+          
+          <rect x="100" y="105" width="220" height="20" rx="3" fill="url(#r1-blue)" stroke="#00b4d8" stroke-width="1"/>
+          <text x="15" y="119" fill="var(--text-muted)" font-size="11">Action C</text>
+          <text x="110" y="119" fill="#fff" font-size="10">Tool Crib Centralization</text>
+          
+          <defs>
+            <linearGradient id="r1-blue" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#0077b6"/><stop offset="100%" stop-color="#00b4d8"/></linearGradient>
+          </defs>
+        </svg>
+      </div>
       <p>Under the <strong>Shell Performance Framework</strong>, maximizing 'Wrench Time' (Direct Tool Time) is our primary lever for workforce productivity. We must choose the single best action package to execute:</p>
       <div class="data-card alert">
         <h4>Improvement Action Packages</h4>
@@ -43,7 +67,7 @@ const roundsData = {
       PE: `
         <h3>[PE] Wrench Time Gains</h3>
         <div class="data-card">
-          <h4>Workforce Productivity Metrics (EN 15341 - O8)</h4>
+          <h4>Workforce Productivity Metrics (Shell Performance Framework)</h4>
           <ul>
             <li><strong>Action A (Digitized PTW):</strong> Increases wrench time by <strong>10 hours/week</strong>.</li>
             <li><strong>Action B (Pre-kitting Bins):</strong> Increases wrench time by <strong>5 hours/week</strong>.</li>
@@ -113,19 +137,37 @@ const roundsData = {
         </div>
         <div class="input-group">
           <label>Optimized Wrench Time (Hours/Week)</label>
-          <input type="number" id="ans-wrenchTime" class="draft-sync" placeholder="e.g. 20" oninput="syncDraftAnswers()">
+          <input type="number" id="ans-wrenchTime" class="draft-sync" placeholder="Enter hours/week" oninput="syncDraftAnswers()">
         </div>
         <div class="input-group">
           <label>Net Economic Gain ($/Week)</label>
-          <input type="text" id="ans-gain" class="draft-sync" placeholder="e.g. 9000" oninput="syncDraftAnswers()">
+          <input type="text" id="ans-gain" class="draft-sync" placeholder="Enter gain $/week" oninput="syncDraftAnswers()">
         </div>
       </div>
     `
   },
   2: {
+    tips: `<strong>Round 2 Tips:</strong> Campaign scheduling reduces backlog hours required to 80 hours. 8 technicians working 10 hours each provide 80 hours capacity. Cost = (8 * $1,000) + $1,000 campaign fee = $9,000. Reactive requires 10 technicians at a cost of $10,000. Campaign is optimal. Correct answer: <strong>campaign, 8, $9,000</strong>.`,
     brief: `
       <h3>Round 2: Maintenance Backlog & Campaign Scheduling</h3>
-      <p>The corrective maintenance backlog on Platform Bravo has escalated. Under <strong>EN 15341</strong> (Workforce Scheduling Compliance), we must plan a campaign to clear critical work orders. Select the scheduling method (Campaign vs. Reactive), the number of technicians to deploy, and calculate the total cost.</p>
+      <div class="round-graphic" style="margin: 15px 0; text-align: center;">
+        <svg viewBox="0 0 500 150" style="width: 100%; max-width: 500px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-family: var(--font-mono), monospace;">
+          <text x="15" y="22" fill="#fff" font-size="12" font-weight="600">Scheduling Efficiency Comparison</text>
+          
+          <text x="15" y="55" fill="#00b4d8" font-size="11" font-weight="bold">Campaign Scheduling:</text>
+          <g transform="translate(170, 40)">
+            <rect x="0" y="0" width="180" height="20" rx="3" fill="rgba(0, 180, 216, 0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="10" y="14" fill="#fff" font-size="9">Structured Campaign Execution</text>
+          </g>
+
+          <text x="15" y="105" fill="#00b4d8" font-size="11" font-weight="bold">Reactive Scheduling:</text>
+          <g transform="translate(170, 90)">
+            <rect x="0" y="0" width="180" height="20" rx="3" fill="rgba(0, 180, 216, 0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="10" y="14" fill="#fff" font-size="9">Ad-Hoc Troubleshooting</text>
+          </g>
+        </svg>
+      </div>
+      <p>The corrective maintenance backlog on Platform Bravo has escalated. Under the <strong>Shell Performance Framework</strong> (Workforce Scheduling Efficiency), we must plan a campaign to clear critical work orders. Select the scheduling method (Campaign vs. Reactive), the number of technicians to deploy, and calculate the total cost.</p>
       <div class="data-card alert">
         <h4>Task Details</h4>
         <p>Determine: 1. Scheduling Method. 2. Technicians deployed. 3. Total cost (technician salaries + campaign mobilization fees).</p>
@@ -214,18 +256,37 @@ const roundsData = {
         </div>
         <div class="input-group">
           <label>Technicians Deployed</label>
-          <input type="number" id="ans-techs" class="draft-sync" placeholder="e.g. 8" oninput="syncDraftAnswers()">
+          <input type="number" id="ans-techs" class="draft-sync" placeholder="Enter technicians" oninput="syncDraftAnswers()">
         </div>
         <div class="input-group">
           <label>Total Campaign Cost ($)</label>
-          <input type="text" id="ans-cost" class="draft-sync" placeholder="e.g. 9000" oninput="syncDraftAnswers()">
+          <input type="text" id="ans-cost" class="draft-sync" placeholder="Enter total cost" oninput="syncDraftAnswers()">
         </div>
       </div>
     `
   },
   3: {
+    tips: `<strong>Round 3 Tips:</strong> PM must start on Day 2 satisfies crane access (Days 1-2), process window (Days 2-3), and vendor availability (Day 2 ONLY). Total duration = 1-hour brief + 4-hour mechanical work + 1-hour clean-up = 6 hours. Correct answer: <strong>2, 6</strong>.`,
     brief: `
       <h3>Round 3: Preventive Maintenance (PM) Compliance & Execution</h3>
+      <div class="round-graphic" style="margin: 15px 0; text-align: center;">
+        <svg viewBox="0 0 500 150" style="width: 100%; max-width: 500px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-family: var(--font-mono), monospace;">
+          <text x="130" y="22" fill="var(--text-muted)" font-size="10">DAY 1</text>
+          <text x="200" y="22" fill="var(--text-muted)" font-size="10">DAY 2</text>
+          <text x="270" y="22" fill="var(--text-muted)" font-size="10">DAY 3</text>
+          <text x="340" y="22" fill="var(--text-muted)" font-size="10">DAY 4</text>
+          <text x="410" y="22" fill="var(--text-muted)" font-size="10">DAY 5</text>
+          
+          <text x="15" y="48" fill="var(--text-muted)" font-size="10">Crane Support</text>
+          <rect x="115" y="38" width="120" height="14" rx="2" fill="rgba(0,180,216,0.25)" stroke="#00b4d8" stroke-width="1"/>
+          
+          <text x="15" y="78" fill="var(--text-muted)" font-size="10">Flow Isolation</text>
+          <rect x="185" y="68" width="120" height="14" rx="2" fill="rgba(46,204,113,0.25)" stroke="#2ecc71" stroke-width="1"/>
+          
+          <text x="15" y="108" fill="var(--text-muted)" font-size="10">Vendor Flight</text>
+          <rect x="185" y="98" width="50" height="14" rx="2" fill="rgba(243,156,18,0.25)" stroke="#f39c12" stroke-width="1"/>
+        </svg>
+      </div>
       <p>A safety-critical pressure control valve requires an overdue Preventive Maintenance (PM) service to comply with the <strong>Shell Performance Framework</strong>. You must determine the **Start Day** and the **Total PM Duration (in hours)** to execute this safely.</p>
     `,
     roles: {
@@ -301,18 +362,41 @@ const roundsData = {
       <div class="dynamic-form-wrap">
         <div class="input-group">
           <label>Start Day (1-5)</label>
-          <input type="number" id="ans-startDay" class="draft-sync" placeholder="e.g. 2" oninput="syncDraftAnswers()">
+          <input type="number" id="ans-startDay" class="draft-sync" placeholder="Enter start day" oninput="syncDraftAnswers()">
         </div>
         <div class="input-group">
           <label>Total PM Duration (Hours)</label>
-          <input type="number" id="ans-duration" class="draft-sync" placeholder="e.g. 6" oninput="syncDraftAnswers()">
+          <input type="number" id="ans-duration" class="draft-sync" placeholder="Enter duration in hours" oninput="syncDraftAnswers()">
         </div>
       </div>
     `
   },
   4: {
+    tips: `<strong>Round 4 Tips:</strong> PQI = 4 out of 5 steps completed = 80%. Actual Wrench Time = 10 hours planned * 80% = 8 hours. Material kits required = 5 valves * 1 kit/valve = 5 kits. Correct answer: <strong>80, 8, 5</strong>.`,
     brief: `
       <h3>Round 4: Planning & Preparation Quality (Plan Quality Index)</h3>
+      <div class="round-graphic" style="margin: 15px 0; text-align: center;">
+        <svg viewBox="0 0 500 130" style="width: 100%; max-width: 500px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-family: var(--font-mono), monospace;">
+          <text x="15" y="25" fill="#fff" font-size="12" font-weight="600">Plan Quality Index (PQI) Checklist Steps</text>
+          
+          <g transform="translate(15, 45)">
+            <rect x="0" y="0" width="80" height="30" rx="4" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="40" y="18" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">Step 1</text>
+            
+            <rect x="90" y="0" width="80" height="30" rx="4" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="130" y="18" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">Step 2</text>
+            
+            <rect x="180" y="0" width="80" height="30" rx="4" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="220" y="18" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">Step 3</text>
+            
+            <rect x="270" y="0" width="80" height="30" rx="4" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="310" y="18" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">Step 4</text>
+            
+            <rect x="360" y="0" width="80" height="30" rx="4" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="400" y="18" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">Step 5</text>
+          </g>
+        </svg>
+      </div>
       <p>A maintenance campaign to overhaul shutdown valves is being prepared. Under the <strong>Shell Performance Framework</strong>, the <strong>Plan Quality Index (PQI)</strong> measures planning readiness. Poor planning directly reduces technician wrench time.</p>
       <p>You must calculate: 1. The Plan Quality Index (PQI) percentage. 2. The resulting actual Wrench Time (hours). 3. The number of material kits to prepare.</p>
     `,
@@ -389,121 +473,658 @@ const roundsData = {
       <div class="dynamic-form-wrap">
         <div class="input-group">
           <label>Plan Quality Index (%)</label>
-          <input type="number" id="ans-pqi" class="draft-sync" placeholder="e.g. 80" oninput="syncDraftAnswers()">
+          <input type="number" id="ans-pqi" class="draft-sync" placeholder="Enter PQI percentage" oninput="syncDraftAnswers()">
         </div>
         <div class="input-group">
           <label>Actual Wrench Time (Hours)</label>
-          <input type="number" id="ans-wrenchTime" class="draft-sync" placeholder="e.g. 8" oninput="syncDraftAnswers()">
+          <input type="number" id="ans-wrenchTime" class="draft-sync" placeholder="Enter wrench time" oninput="syncDraftAnswers()">
         </div>
         <div class="input-group">
           <label>Material Kits to Prepare</label>
-          <input type="number" id="ans-kits" class="draft-sync" placeholder="e.g. 5" oninput="syncDraftAnswers()">
+          <input type="number" id="ans-kits" class="draft-sync" placeholder="Enter material kits" oninput="syncDraftAnswers()">
         </div>
       </div>
     `
   },
   5: {
+    tips: `<strong>Round 5 Tips:</strong> Option A costs $50,000. Option B costs $25,000 + 5 * $12,000 = $85,000. Option C costs $25,000 + 5 * $2,000 = $35,000. Option C (Liability Transfer Sale) is optimal. Correct answer: <strong>C, $35,000</strong>.`,
     brief: `
-      <h3>Round 5: Wrench Time Measurement & Productivity Analysis</h3>
-      <p>A work sampling study was conducted on a technician crew to measure Wrench Time under <strong>EN 15341 (O8 Indicator)</strong>. You must classify the productivity category, determine the Wrench Time percentage, and calculate the Net Labor Value gained relative to our historical baseline.</p>
+      <h3>Round 5: Subsea Well Decommissioning Strategy (LLAM)</h3>
+      <div class="round-graphic" style="margin: 15px 0; text-align: center;">
+        <svg viewBox="0 0 500 150" style="width: 100%; max-width: 500px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-family: var(--font-mono), monospace;">
+          <text x="15" y="25" fill="#fff" font-size="12" font-weight="600">Decommissioning Options Evaluation</text>
+          
+          <g transform="translate(20, 45)">
+            <rect x="0" y="0" width="140" height="60" rx="4" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="70" y="25" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">Option A</text>
+            <text x="70" y="42" fill="var(--text-muted)" font-size="8.5" text-anchor="middle">Immediate P&amp;A</text>
+            
+            <rect x="160" y="0" width="140" height="60" rx="4" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="230" y="25" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">Option B</text>
+            <text x="230" y="42" fill="var(--text-muted)" font-size="8.5" text-anchor="middle">5-Year Suspension</text>
+            
+            <rect x="320" y="0" width="140" height="60" rx="4" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="390" y="25" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">Option C</text>
+            <text x="390" y="42" fill="var(--text-muted)" font-size="8.5" text-anchor="middle">Liability Transfer</text>
+          </g>
+        </svg>
+      </div>
+      <p>Under <strong>SCL Late Life Asset Decommissioning Guidelines (LLAD-05)</strong>, we must determine the most cost-efficient strategy for 5 subsea wells nearing their late-life stage. We have three main decommissioning options to evaluate: Option A (Immediate Plug & Abandonment), Option B (5-Year Wet Suspension), and Option C (Liability Transfer Sale). Compare the total expected costs and select the optimal strategy and calculate the total cost.</p>
     `,
     roles: {
       SE: `
-        <h3>[SE] Work Sampling Observations</h3>
+        <h3>[SE] Well Count & Condition</h3>
         <div class="data-card">
-          <h4>Sampling Raw Data</h4>
+          <h4>Subsea Well Portfolio</h4>
           <ul>
-            <li><strong>Total Random Observations:</strong> <strong>100 observations</strong> were recorded across the crew during the 1-week study.</li>
+            <li><strong>Well Count:</strong> We have exactly <strong>5 subsea wells</strong> that must be decommissioned.</li>
           </ul>
         </div>
       `,
       PE: `
-        <h3>[PE] Productivity Observations Breakdown</h3>
+        <h3>[PE] Decommissioning Options</h3>
         <div class="data-card alert">
-          <h4>Observation Log</h4>
+          <h4>Options Description</h4>
           <ul>
-            <li><strong>Direct Maintenance Work (Wrench Time):</strong> 50 observations.</li>
-            <li><strong>All Other Delays/Transits:</strong> 50 observations.</li>
+            <li><strong>Option A (Immediate P&A):</strong> Seal the wells immediately. Costs $10,000 per well.</li>
+            <li><strong>Option B (5-Year Suspension):</strong> Temporarily suspend the wells. Suspension cost is a flat $25,000 for the field, but future P&A costs will be $12,000 per well.</li>
+            <li><strong>Option C (Liability Transfer):</strong> Sell the wells to a niche operator. Transaction cost is a flat $25,000, plus a liability transfer fee of $2,000 per well.</li>
           </ul>
         </div>
       `,
       HSE: `
-        <h3>[HSE] Wrench Time Ratio Formula</h3>
+        <h3>[HSE] Decommissioning Regulatory Codes</h3>
         <div class="data-card danger">
-          <h4>Wrench Time KPI & Classification</h4>
+          <h4>HSE Guidelines</h4>
           <ul>
-            <li><strong>Formula:</strong> <code>Wrench Time % = (Direct Work Observations / Total Observations) * 100</code>.</li>
-            <li><strong>Classification Thresholds:</strong>
-              <br>High (>=50%), Medium (30%-49%), Low (<30%)
-            </li>
+            <li><strong>Compliance:</strong> All strategies must satisfy SCL Late Life Asset Decommissioning Guidelines (LLAD-05) to ensure structural integrity during decommissioning.</li>
           </ul>
         </div>
       `,
       LSC: `
-        <h3>[LSC] Labor Cost constraints</h3>
+        <h3>[LSC] Logistics Mobilization</h3>
         <div class="data-card">
-          <h4>Weekly Crew Labor Cost</h4>
+          <h4>Mobilization Constraints</h4>
           <ul>
-            <li><strong>Weekly labor cost:</strong> Exactly $10,000.</li>
+            <li><strong>Option A:</strong> Requires heavy vessel mobilization (included in the $10,000/well cost).</li>
+            <li><strong>Option B:</strong> Suspension prep includes monitoring equipment setup.</li>
+            <li><strong>Option C:</strong> Requires legal and regulatory transfer approvals.</li>
           </ul>
         </div>
       `,
       FA: `
-        <h3>[FA] Labor Economics Ledger</h3>
+        <h3>[FA] Decommissioning Ledger</h3>
         <div class="data-card">
-          <h4>Productive Labor Gains</h4>
+          <h4>Total Cost Formulas</h4>
           <ul>
-            <li><strong>Historical Baseline:</strong> Historically, Wrench Time was <strong>30%</strong>.</li>
-            <li><strong>Labor Gain Formula:</strong> <code>Net Labor Value Gained = (Current Wrench Time % - Baseline Wrench Time %) * Weekly Labor Cost / 100</code>.</li>
-            <li><em>Submit: 1. Productivity Class. 2. Wrench Time (%). 3. Value Gained ($).</em></li>
+            <li><strong>Option A Cost:</strong> 5 wells * $10,000/well.</li>
+            <li><strong>Option B Cost:</strong> $25,000 flat + (5 wells * $12,000/well).</li>
+            <li><strong>Option C Cost:</strong> $25,000 flat + (5 wells * $2,000/well).</li>
+            <li><em>Calculate the total cost of each strategy and submit the best Option (A, B, or C) and its total cost.</em></li>
           </ul>
         </div>
       `
     },
     objectiveQuestions: {
       q1: {
-        text: "Under EN 15341, how is the technician crew's 50% Wrench Time classified?",
+        text: "Which decommissioning strategy is the most cost-efficient and optimal?",
         options: [
-          "High Productivity",
-          "Medium Productivity",
-          "Low Productivity"
+          "Immediate Plug & Abandonment (Option A)",
+          "5-Year Wet Suspension (Option B)",
+          "Liability Transfer Sale (Option C)"
         ]
       },
       q2: {
-        text: "What is the net productive labor value gained per week compared to the 30% baseline?",
+        text: "What is the total cost of the optimal decommissioning strategy?",
         options: [
-          "$1,000",
-          "$2,000",
-          "$3,000",
-          "$5,000"
+          "$50,000",
+          "$85,000",
+          "$35,000",
+          "$25,000"
         ]
       }
     },
     inputs: `
       <div class="dynamic-form-wrap">
         <div class="input-group">
-          <label>Productivity Classification</label>
-          <select id="ans-productivity" class="draft-sync" onchange="syncDraftAnswers()">
-            <option value="" disabled selected>Select class...</option>
-            <option value="High">High (>=50%)</option>
-            <option value="Medium">Medium (30%-49%)</option>
-            <option value="Low">Low (<30%)</option>
+          <label>Decommissioning Strategy</label>
+          <select id="ans-strategy" class="draft-sync" onchange="syncDraftAnswers()">
+            <option value="" disabled selected>Select strategy...</option>
+            <option value="A">Option A (Immediate P&A)</option>
+            <option value="B">Option B (5-Year Suspension)</option>
+            <option value="C">Option C (Liability Transfer)</option>
           </select>
         </div>
         <div class="input-group">
-          <label>Wrench Time (%)</label>
-          <input type="number" id="ans-wrenchTime" class="draft-sync" placeholder="e.g. 50" oninput="syncDraftAnswers()">
-        </div>
-        <div class="input-group">
-          <label>Net Labor Value Gained ($)</label>
-          <input type="text" id="ans-laborValue" class="draft-sync" placeholder="e.g. 2000" oninput="syncDraftAnswers()">
+          <label>Total Decommissioning Cost ($)</label>
+          <input type="text" id="ans-cost" class="draft-sync" placeholder="Enter total cost" oninput="syncDraftAnswers()">
         </div>
       </div>
     `
   },
   6: {
+    tips: `<strong>Round 6 Tips:</strong> Option A expected cost = $1,500. Option B expected cost = 50% * $5,000 = $2,500. Option C expected cost = $500 + 50% * $2,500 = $1,750. Option A (Local Stocking) is optimal. Correct answer: <strong>A, $1,500</strong>.`,
     brief: `
-      <h3>Tie-Breaker: Shell Maintenance Execution Cycle</h3>
+      <h3>Round 6: Turbine Bearing Spare Parts Logistics (MMS)</h3>
+      <div class="round-graphic" style="margin: 15px 0; text-align: center;">
+        <svg viewBox="0 0 500 150" style="width: 100%; max-width: 500px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-family: var(--font-mono), monospace;">
+          <text x="15" y="25" fill="#fff" font-size="12" font-weight="600">Material Logistics Configurations</text>
+          <g transform="translate(20, 45)">
+            <circle cx="50" cy="40" r="30" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="50" y="44" fill="#fff" font-size="9" font-weight="bold" text-anchor="middle">Local (A)</text>
+            
+            <circle cx="230" cy="40" r="30" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="230" y="44" fill="#fff" font-size="9" font-weight="bold" text-anchor="middle">Hub (B)</text>
+            
+            <circle cx="410" cy="40" r="30" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="410" y="44" fill="#fff" font-size="9" font-weight="bold" text-anchor="middle">Pool (C)</text>
+          </g>
+        </svg>
+      </div>
+      <p>Under <strong>SCL Material Management Standards (MMS-06)</strong>, we must determine the most cost-efficient strategy for storing a critical turbine bearing spare. We have three stocking configurations: Option A (Local Warehouse Stocking), Option B (Central Hub Ordering), and Option C (Shared Inventory Pool). Compare the total expected weekly costs (membership fees + expected downtime risk penalties) and select the optimal strategy and calculate the expected cost.</p>
+    `,
+    roles: {
+      SE: `
+        <h3>[SE] Turbine Downtime Impact</h3>
+        <div class="data-card danger">
+          <h4>Production Downtime Penalty</h4>
+          <ul>
+            <li><strong>Downtime Penalty:</strong> A turbine outage due to a missing bearing costs exactly <strong>$5,000 per week</strong> in lost production.</li>
+          </ul>
+        </div>
+      `,
+      PE: `
+        <h3>[PE] Warehouse Configurations</h3>
+        <div class="data-card">
+          <h4>Local Warehouse Stocking (Option A)</h4>
+          <ul>
+            <li><strong>Description:</strong> Stock the bearing in our own platform warehouse.</li>
+            <li><strong>Holding Cost:</strong> $1,500/week holding cost.</li>
+            <li><strong>Stockout Risk:</strong> 0% risk of stockout (immediate availability).</li>
+          </ul>
+        </div>
+      `,
+      HSE: `
+        <h3>[HSE] Central Hub Ordering (Option B)</h3>
+        <div class="data-card alert">
+          <h4>Central Hub Logistics</h4>
+          <ul>
+            <li><strong>Description:</strong> Order from the central hub on demand.</li>
+            <li><strong>Holding Cost:</strong> $0/week (stored at hub).</li>
+            <li><strong>Stockout Risk:</strong> 50% probability of stockout per week due to transit delays.</li>
+          </ul>
+        </div>
+      `,
+      LSC: `
+        <h3>[LSC] Shared Inventory Pool (Option C)</h3>
+        <div class="data-card">
+          <h4>Shared Inventory Pool Details</h4>
+          <ul>
+            <li><strong>Description:</strong> Join a shared industry inventory pool.</li>
+            <li><strong>Membership Fee:</strong> $500/week membership fee.</li>
+            <li><strong>Downtime Risk:</strong> Expected downtime penalty under shared pool agreement is $2,500/week (50% probability of a $2,500 penalty).</li>
+          </ul>
+        </div>
+      `,
+      FA: `
+        <h3>[FA] Material Cost Ledger</h3>
+        <div class="data-card">
+          <h4>Expected Cost Formulas</h4>
+          <ul>
+            <li><strong>Option A Expected Cost:</strong> $1,500 holding cost + 0% risk = $1,500.</li>
+            <li><strong>Option B Expected Cost:</strong> 50% probability * $5,000 downtime penalty = $2,500.</li>
+            <li><strong>Option C Expected Cost:</strong> $500 membership fee + (50% probability * $2,500 penalty) = $1,750.</li>
+            <li><em>Submit: 1. Best Option (A, B, or C). 2. Expected weekly cost ($).</em></li>
+          </ul>
+        </div>
+      `
+    },
+    objectiveQuestions: {
+      q1: {
+        text: "Which warehouse/logistics configuration is the most cost-efficient and optimal?",
+        options: [
+          "Local Warehouse Stocking (Option A)",
+          "Central Hub Ordering (Option B)",
+          "Shared Inventory Pool (Option C)"
+        ]
+      },
+      q2: {
+        text: "What is the expected weekly cost of the optimal warehouse configuration?",
+        options: [
+          "$1,500",
+          "$2,500",
+          "$1,750",
+          "$0"
+        ]
+      }
+    },
+    inputs: `
+      <div class="dynamic-form-wrap">
+        <div class="input-group">
+          <label>Warehouse Option</label>
+          <select id="ans-option" class="draft-sync" onchange="syncDraftAnswers()">
+            <option value="" disabled selected>Select option...</option>
+            <option value="A">Option A (Local Stocking)</option>
+            <option value="B">Option B (Central Hub)</option>
+            <option value="C">Option C (Shared Pool)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Expected Weekly Cost ($)</label>
+          <input type="text" id="ans-cost" class="draft-sync" placeholder="Enter expected cost" oninput="syncDraftAnswers()">
+        </div>
+      </div>
+    `
+  },
+  7: {
+    tips: `<strong>Round 7 Tips:</strong> Option A expected cost = $10,000 + (1% * $100,000) = $11,000. Option B expected cost = $6,000 + (4% * $100,000) = $10,000. Option C expected cost = $1,000 + (16% * $100,000) = $17,000. Option B (Pulsed Eddy Current) is optimal. Correct answer: <strong>B, $10,000</strong>.`,
+    brief: `
+      <h3>Round 7: Piping Corrosion Inspection (NII)</h3>
+      <div class="round-graphic" style="margin: 15px 0; text-align: center;">
+        <svg viewBox="0 0 500 150" style="width: 100%; max-width: 500px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-family: var(--font-mono), monospace;">
+          <text x="15" y="25" fill="#fff" font-size="12" font-weight="600">Piping Inspection Techniques</text>
+          <g transform="translate(10, 45)">
+            <rect x="10" y="10" width="130" height="50" rx="3" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="75" y="40" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">UT (A)</text>
+            
+            <rect x="170" y="10" width="130" height="50" rx="3" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="235" y="40" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">PEC (B)</text>
+            
+            <rect x="330" y="10" width="130" height="50" rx="3" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="395" y="40" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">Visual (C)</text>
+          </g>
+        </svg>
+      </div>
+      <p>Under <strong>SCL Non-Intrusive Inspection (NII) guidelines</strong>, we must select the optimal inspection method for piping corrosion under insulation on Platform Bravo. We have three main strategies to evaluate: Option A (Manual Insulation Stripping & Ultrasonic Testing), Option B (Pulsed Eddy Current Inspection), and Option C (Visual Inspection Only). Compare the total expected costs (inspection costs + expected risk penalties) and select the optimal strategy and calculate the expected cost.</p>
+    `,
+    roles: {
+      SE: `
+        <h3>[SE] Ultrasonic Testing (Option A)</h3>
+        <div class="data-card">
+          <h4>Option A Details</h4>
+          <ul>
+            <li><strong>Description:</strong> Strip insulation manually and perform UT.</li>
+            <li><strong>Inspection Cost:</strong> $10,000 inspection fee.</li>
+            <li><strong>Risk of Leak:</strong> 1% remaining risk of undetected corrosion.</li>
+          </ul>
+        </div>
+      `,
+      PE: `
+        <h3>[PE] Pulsed Eddy Current (Option B)</h3>
+        <div class="data-card alert">
+          <h4>Option B Details</h4>
+          <ul>
+            <li><strong>Description:</strong> Scan through insulation using Pulsed Eddy Current.</li>
+            <li><strong>Inspection Cost:</strong> $6,000 inspection fee.</li>
+            <li><strong>Risk of Leak:</strong> 4% remaining risk of undetected corrosion.</li>
+          </ul>
+        </div>
+      `,
+      HSE: `
+        <h3>[HSE] Visual Inspection (Option C)</h3>
+        <div class="data-card danger">
+          <h4>Option C Details</h4>
+          <ul>
+            <li><strong>Description:</strong> External visual inspection only (no insulation removal).</li>
+            <li><strong>Inspection Cost:</strong> $1,000 inspection fee.</li>
+            <li><strong>Risk of Leak:</strong> 16% remaining risk of undetected corrosion.</li>
+          </ul>
+        </div>
+      `,
+      LSC: `
+        <h3>[LSC] Leak Risk Penalties</h3>
+        <div class="data-card">
+          <h4>Environmental & Safety Penalty</h4>
+          <ul>
+            <li><strong>Leak Penalty:</strong> A piping leak results in production shutdown and environmental cleanup costing exactly <strong>$100,000</strong>.</li>
+          </ul>
+        </div>
+      `,
+      FA: `
+        <h3>[FA] Inspection Ledger</h3>
+        <div class="data-card">
+          <h4>Expected Cost Formulas</h4>
+          <ul>
+            <li><strong>Total Expected Cost:</strong> Inspection Cost + (Risk % * $100,000).</li>
+            <li><strong>Option A:</strong> $10,000 + (1% * $100,000) = $11,000.</li>
+            <li><strong>Option B:</strong> $6,000 + (4% * $100,000) = $10,000.</li>
+            <li><strong>Option C:</strong> $1,000 + (16% * $100,000) = $17,000.</li>
+            <li><em>Submit the best Option (A, B, or C) and its total expected cost.</em></li>
+          </ul>
+        </div>
+      `
+    },
+    objectiveQuestions: {
+      q1: {
+        text: "Which piping corrosion inspection method is the most cost-efficient and optimal?",
+        options: [
+          "Manual Stripping & UT (Option A)",
+          "Pulsed Eddy Current (Option B)",
+          "Visual Inspection Only (Option C)"
+        ]
+      },
+      q2: {
+        text: "What is the expected total cost of the optimal inspection strategy?",
+        options: [
+          "$11,000",
+          "$10,000",
+          "$17,000",
+          "$6,000"
+        ]
+      }
+    },
+    inputs: `
+      <div class="dynamic-form-wrap">
+        <div class="input-group">
+          <label>Inspection Strategy</label>
+          <select id="ans-strategy" class="draft-sync" onchange="syncDraftAnswers()">
+            <option value="" disabled selected>Select strategy...</option>
+            <option value="A">Option A (Manual UT)</option>
+            <option value="B">Option B (Pulsed Eddy Current)</option>
+            <option value="C">Option C (Visual Only)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Expected Total Cost ($)</label>
+          <input type="text" id="ans-cost" class="draft-sync" placeholder="Enter expected cost" oninput="syncDraftAnswers()">
+        </div>
+      </div>
+    `
+  },
+  8: {
+    tips: `<strong>Round 8 Tips:</strong> PFD limit is <= 0.015. 12-Month interval fails safety criteria (PFD 0.020). 6-Month interval has PFD 0.010 (compliant). 3-Month interval has PFD 0.005 (compliant). Longest compliant interval is 6-Month. Annual cost = 2 tests * $2,000 = $4,000. Correct answer: <strong>6-Month, $4,000</strong>.`,
+    brief: `
+      <h3>Round 8: ESD Valve Testing Interval (Safety Critical Elements)</h3>
+      <div class="round-graphic" style="margin: 15px 0; text-align: center;">
+        <svg viewBox="0 0 500 150" style="width: 100%; max-width: 500px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-family: var(--font-mono), monospace;">
+          <text x="15" y="25" fill="#fff" font-size="12" font-weight="600">Testing Intervals &amp; PFD Comparison</text>
+          <g transform="translate(10, 45)">
+            <rect x="10" y="10" width="130" height="50" rx="3" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="75" y="40" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">12-Month (B)</text>
+            
+            <rect x="170" y="10" width="130" height="50" rx="3" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="235" y="40" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">6-Month (A)</text>
+            
+            <rect x="330" y="10" width="130" height="50" rx="3" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="395" y="40" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">3-Month (C)</text>
+          </g>
+        </svg>
+      </div>
+      <p>Under <strong>SCL Safety Critical System integrity protocols</strong>, we must balance testing frequency against compliance limits. The platform Emergency Shutdown (ESD) valve must maintain a Probability of Failure on Demand (PFD) of 0.015 or lower to remain compliant. We have three testing intervals: 3-Month, 6-Month, and 12-Month. Select the longest testing interval that remains regulatory-compliant, and calculate its total annual testing cost.</p>
+    `,
+    roles: {
+      SE: `
+        <h3>[SE] ESD Valve Reliability</h3>
+        <div class="data-card danger">
+          <h4>Regulatory PFD Threshold</h4>
+          <ul>
+            <li><strong>PFD Limit:</strong> The regulatory safety ceiling requires a PFD of **&le; 0.015** (compliant). Any PFD above 0.015 is non-compliant.</li>
+          </ul>
+        </div>
+      `,
+      PE: `
+        <h3>[PE] PFD by Testing Interval</h3>
+        <div class="data-card">
+          <h4>Testing Intervals & PFD Rates</h4>
+          <ul>
+            <li><strong>12-Month Testing (Option B):</strong> Results in a PFD of <strong>0.020</strong>.</li>
+            <li><strong>6-Month Testing (Option A):</strong> Results in a PFD of <strong>0.010</strong>.</li>
+            <li><strong>3-Month Testing (Option C):</strong> Results in a PFD of <strong>0.005</strong>.</li>
+          </ul>
+        </div>
+      `,
+      HSE: `
+        <h3>[HSE] Safety critical standards</h3>
+        <div class="data-card alert">
+          <h4>Compliance Check</h4>
+          <ul>
+            <li><strong>Compliance Rule:</strong> Non-compliant options (PFD > 0.015) are prohibited. Among compliant options, we must select the longest interval to minimize unnecessary intervention risk.</li>
+          </ul>
+        </div>
+      `,
+      LSC: `
+        <h3>[LSC] Valve Mobilization Logistics</h3>
+        <div class="data-card">
+          <h4>Unit Testing Cost</h4>
+          <ul>
+            <li><strong>Testing Fee:</strong> Each valve testing operation costs exactly <strong>$2,000</strong> in technicians and specialized equipment mobilization.</li>
+          </ul>
+        </div>
+      `,
+      FA: `
+        <h3>[FA] Annual Testing Budgets</h3>
+        <div class="data-card">
+          <h4>Annual Cost Calculations</h4>
+          <ul>
+            <li><strong>12-Month (Option B):</strong> 1 test/year * $2,000 = $2,000.</li>
+            <li><strong>6-Month (Option A):</strong> 2 tests/year * $2,000 = $4,000.</li>
+            <li><strong>3-Month (Option C):</strong> 4 tests/year * $2,000 = $8,000.</li>
+            <li><em>Determine the longest compliant interval and submit the Interval (e.g. 6-Month) and its annual cost.</em></li>
+          </ul>
+        </div>
+      `
+    },
+    objectiveQuestions: {
+      q1: {
+        text: "Which testing interval is the most cost-effective compliant testing frequency?",
+        options: [
+          "3-Month Interval (Option C)",
+          "6-Month Interval (Option A)",
+          "12-Month Interval (Option B)"
+        ]
+      },
+      q2: {
+        text: "What is the total annual testing cost of the selected compliant interval?",
+        options: [
+          "$4,000",
+          "$2,000",
+          "$8,000",
+          "$0"
+        ]
+      }
+    },
+    inputs: `
+      <div class="dynamic-form-wrap">
+        <div class="input-group">
+          <label>Testing Interval</label>
+          <select id="ans-interval" class="draft-sync" onchange="syncDraftAnswers()">
+            <option value="" disabled selected>Select interval...</option>
+            <option value="3-Month">3-Month Interval (Option C)</option>
+            <option value="6-Month">6-Month Interval (Option A)</option>
+            <option value="12-Month">12-Month Interval (Option B)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Annual Testing Cost ($)</label>
+          <input type="text" id="ans-cost" class="draft-sync" placeholder="Enter annual cost" oninput="syncDraftAnswers()">
+        </div>
+      </div>
+    `
+  },
+  9: {
+    tips: `<strong>Round 9 Tips:</strong> Option A expected cost = $3,000 + (2% * $100,000) = $5,000. Option B expected cost = $1,000 + (10% * $100,000) = $11,000. Option C expected cost = $0 + (15% * $100,000) = $15,000. Option A (Simulator-Based) is optimal. Correct answer: <strong>A, $5,000</strong>.`,
+    brief: `
+      <h3>Round 9: Operator Competency & Flaring Prevention (Operations Excellence)</h3>
+      <div class="round-graphic" style="margin: 15px 0; text-align: center;">
+        <svg viewBox="0 0 500 150" style="width: 100%; max-width: 500px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-family: var(--font-mono), monospace;">
+          <text x="15" y="25" fill="#fff" font-size="12" font-weight="600">Training Program Configurations</text>
+          <g transform="translate(10, 45)">
+            <rect x="10" y="10" width="130" height="50" rx="3" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="75" y="40" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">Simulator (A)</text>
+            
+            <rect x="170" y="10" width="130" height="50" rx="3" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="235" y="40" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">Classroom (B)</text>
+            
+            <rect x="330" y="10" width="130" height="50" rx="3" fill="rgba(0,180,216,0.15)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="395" y="40" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle">Mentoring (C)</text>
+          </g>
+        </svg>
+      </div>
+      <p>Under <strong>SCL Environmental Performance standards</strong>, we must minimize greenhouse gas emissions and flaring events. We are evaluating three training configurations for control room operators to prevent accidental flaring: Option A (Simulator-Based Training), Option B (Classroom Lecture), and Option C (On-the-Job Mentoring). Compare the total expected costs (training cost + expected environmental flaring penalties) and select the optimal training method and calculate its total expected cost.</p>
+    `,
+    roles: {
+      SE: `
+        <h3>[SE] Flaring Penalty</h3>
+        <div class="data-card danger">
+          <h4>Environmental Fine</h4>
+          <ul>
+            <li><strong>Flaring Penalty:</strong> A reportable flaring event results in environmental penalties and shutdown costs totaling exactly <strong>$100,000</strong>.</li>
+          </ul>
+        </div>
+      `,
+      PE: `
+        <h3>[PE] Simulator Training (Option A)</h3>
+        <div class="data-card">
+          <h4>Option A Details</h4>
+          <ul>
+            <li><strong>Description:</strong> Immersive simulator training.</li>
+            <li><strong>Training Cost:</strong> $3,000 per operator crew.</li>
+            <li><strong>Flare Probability:</strong> 2% probability of a flaring event per year.</li>
+          </ul>
+        </div>
+      `,
+      HSE: `
+        <h3>[HSE] Classroom Training (Option B)</h3>
+        <div class="data-card alert">
+          <h4>Option B Details</h4>
+          <ul>
+            <li><strong>Description:</strong> Traditional classroom safety training.</li>
+            <li><strong>Training Cost:</strong> $1,000 per operator crew.</li>
+            <li><strong>Flare Probability:</strong> 10% probability of a flaring event per year.</li>
+          </ul>
+        </div>
+      `,
+      LSC: `
+        <h3>[LSC] On-the-Job Mentoring (Option C)</h3>
+        <div class="data-card">
+          <h4>Option C Details</h4>
+          <ul>
+            <li><strong>Description:</strong> Peer-to-peer mentoring.</li>
+            <li><strong>Training Cost:</strong> $0 cost.</li>
+            <li><strong>Flare Probability:</strong> 15% probability of a flaring event per year.</li>
+          </ul>
+        </div>
+      `,
+      FA: `
+        <h3>[FA] Training Ledger</h3>
+        <div class="data-card">
+          <h4>Expected Cost Formulas</h4>
+          <ul>
+            <li><strong>Total Expected Cost:</strong> Training Cost + (Flare Probability * $100,000).</li>
+            <li><strong>Option A Expected Cost:</strong> $3,000 + (2% * $100,000) = $5,000.</li>
+            <li><strong>Option B Expected Cost:</strong> $1,000 + (10% * $100,000) = $11,000.</li>
+            <li><strong>Option C Expected Cost:</strong> $0 + (15% * $100,000) = $15,000.</li>
+            <li><em>Submit the best Option (A, B, or C) and its total expected cost.</em></li>
+          </ul>
+        </div>
+      `
+    },
+    objectiveQuestions: {
+      q1: {
+        text: "Which training method is the most cost-efficient and optimal?",
+        options: [
+          "Simulator-Based (Option A)",
+          "Classroom Lecture (Option B)",
+          "On-the-Job Mentoring (Option C)"
+        ]
+      },
+      q2: {
+        text: "What is the expected total cost of the optimal training strategy?",
+        options: [
+          "$5,000",
+          "$11,000",
+          "$15,000",
+          "$3,000"
+        ]
+      }
+    },
+    inputs: `
+      <div class="dynamic-form-wrap">
+        <div class="input-group">
+          <label>Training Method</label>
+          <select id="ans-method" class="draft-sync" onchange="syncDraftAnswers()">
+            <option value="" disabled selected>Select method...</option>
+            <option value="A">Option A (Simulator)</option>
+            <option value="B">Option B (Classroom)</option>
+            <option value="C">Option C (Mentoring)</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <label>Expected Total Cost ($)</label>
+          <input type="text" id="ans-cost" class="draft-sync" placeholder="Enter expected cost" oninput="syncDraftAnswers()">
+        </div>
+      </div>
+    `
+  },
+  10: {
+    tips: `<strong>Round 10 Tips:</strong> The correct chronological order of the 8 SCL Maintenance Execution Cycle steps is: 1. Identify & Define, 2. Approve & Prioritize, 3. Plan & Prepare, 4. Schedule & Align, 5. Permit & Authorize, 6. Execute & Monitor, 7. Close & Document, 8. Review & Improve.`,
+    brief: `
+      <h3>Tie-Breaker: SCL Maintenance Execution Cycle</h3>
+      <div class="round-graphic" style="margin: 15px 0; text-align: center;">
+        <svg viewBox="0 0 580 115" style="width: 100%; max-width: 580px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; font-family: var(--font-mono), monospace;">
+          <g transform="translate(15, 12)">
+            <rect x="0" y="0" width="115" height="32" rx="4" fill="rgba(0,180,216,0.1)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="57" y="15" fill="#00b4d8" font-size="9" font-weight="bold" text-anchor="middle">Plan &amp; Prepare</text>
+            <text x="57" y="25" fill="var(--text-muted)" font-size="7.5" text-anchor="middle">Step Choice</text>
+            
+            <path d="M 120,16 L 135,16" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arrow)"/>
+            
+            <rect x="140" y="0" width="115" height="32" rx="4" fill="rgba(0,180,216,0.1)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="197" y="15" fill="#00b4d8" font-size="9" font-weight="bold" text-anchor="middle">Close &amp; Document</text>
+            <text x="197" y="25" fill="var(--text-muted)" font-size="7.5" text-anchor="middle">Step Choice</text>
+            
+            <path d="M 260,16 L 275,16" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arrow)"/>
+            
+            <rect x="280" y="0" width="115" height="32" rx="4" fill="rgba(0,180,216,0.1)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="337" y="15" fill="#00b4d8" font-size="9" font-weight="bold" text-anchor="middle">Identify &amp; Define</text>
+            <text x="337" y="25" fill="var(--text-muted)" font-size="7.5" text-anchor="middle">Step Choice</text>
+            
+            <path d="M 400,16 L 415,16" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arrow)"/>
+            
+            <rect x="420" y="0" width="115" height="32" rx="4" fill="rgba(0,180,216,0.1)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="477" y="15" fill="#00b4d8" font-size="9" font-weight="bold" text-anchor="middle">Execute &amp; Monitor</text>
+            <text x="477" y="25" fill="var(--text-muted)" font-size="7.5" text-anchor="middle">Step Choice</text>
+          </g>
+
+          <path d="M 525,48 L 525,64" stroke="var(--text-muted)" stroke-width="1.5" marker-end="url(#arrow-down)"/>
+
+          <g transform="translate(15, 68)">
+            <rect x="0" y="0" width="115" height="32" rx="4" fill="rgba(0,180,216,0.1)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="57" y="15" fill="#00b4d8" font-size="9" font-weight="bold" text-anchor="middle">Review &amp; Improve</text>
+            <text x="57" y="25" fill="var(--text-muted)" font-size="7.5" text-anchor="middle">Step Choice</text>
+            
+            <path d="M 135,16 L 122,16" stroke="var(--text-muted)" stroke-width="1.5" marker-start="url(#arrow-left)"/>
+            
+            <rect x="140" y="0" width="115" height="32" rx="4" fill="rgba(0,180,216,0.1)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="197" y="15" fill="#00b4d8" font-size="9" font-weight="bold" text-anchor="middle">Approve &amp; Prioritize</text>
+            <text x="197" y="25" fill="var(--text-muted)" font-size="7.5" text-anchor="middle">Step Choice</text>
+            
+            <path d="M 275,16 L 262,16" stroke="var(--text-muted)" stroke-width="1.5" marker-start="url(#arrow-left)"/>
+            
+            <rect x="280" y="0" width="115" height="32" rx="4" fill="rgba(0,180,216,0.1)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="337" y="15" fill="#00b4d8" font-size="9" font-weight="bold" text-anchor="middle">Permit &amp; Authorize</text>
+            <text x="337" y="25" fill="var(--text-muted)" font-size="7.5" text-anchor="middle">Step Choice</text>
+            
+            <path d="M 415,16 L 402,16" stroke="var(--text-muted)" stroke-width="1.5" marker-start="url(#arrow-left)"/>
+            
+            <rect x="420" y="0" width="115" height="32" rx="4" fill="rgba(0,180,216,0.1)" stroke="#00b4d8" stroke-width="1"/>
+            <text x="477" y="15" fill="#00b4d8" font-size="9" font-weight="bold" text-anchor="middle">Schedule &amp; Align</text>
+            <text x="477" y="25" fill="var(--text-muted)" font-size="7.5" text-anchor="middle">Step Choice</text>
+          </g>
+          
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="var(--text-muted)"/>
+            </marker>
+            <marker id="arrow-down" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="90">
+              <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="var(--text-muted)"/>
+            </marker>
+            <marker id="arrow-left" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="180">
+              <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="var(--text-muted)"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
       <p>Under the <strong>Shell Performance Framework</strong>, the maintenance execution process follows a strict 8-step cycle to maximize wrench time and technical integrity. You must work together to arrange the 8 lifecycle steps in their correct chronological order from first to last.</p>
       <div class="data-card warning">
         <h4>Tie-Breaker Protocol</h4>
@@ -563,7 +1184,7 @@ const roundsData = {
     },
     objectiveQuestions: {
       q1: {
-        text: "Which of the following represents the first step of the Shell Maintenance Execution Cycle?",
+        text: "Which of the following represents the first step of the SCL Maintenance Execution Cycle?",
         options: [
           "Approve & Prioritize",
           "Identify & Define",
@@ -608,6 +1229,8 @@ let currentSequence = [...defaultSteps];
 // Document Ready
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
+  const savedTheme = localStorage.getItem('game-theme') || 'dark';
+  applyTheme(savedTheme);
 });
 
 // Setup socket and UI listeners
@@ -647,22 +1270,38 @@ function setupEventListeners() {
 
   // Facilitator UI button events
   document.getElementById('btn-fac-start-game').addEventListener('click', () => {
-    socket.emit('start-game');
+    if (confirm("Are you sure you want to initialize the simulation?")) {
+      socket.emit('start-game');
+    }
   });
   document.getElementById('btn-fac-start-timer').addEventListener('click', () => {
-    socket.emit('start-round-timer');
+    if (confirm("Are you sure you want to start/resume the round timer?")) {
+      socket.emit('start-round-timer');
+    }
   });
   document.getElementById('btn-fac-pause-timer').addEventListener('click', () => {
-    socket.emit('pause-round-timer');
+    if (confirm("Are you sure you want to pause the round timer?")) {
+      socket.emit('pause-round-timer');
+    }
   });
   document.getElementById('btn-fac-end-round').addEventListener('click', () => {
-    socket.emit('end-round');
+    if (confirm("Are you sure you want to force end the current round?")) {
+      socket.emit('end-round');
+    }
   });
   document.getElementById('btn-fac-next-round').addEventListener('click', () => {
-    socket.emit('next-round');
+    if (confirm("Are you sure you want to proceed to the next round?")) {
+      socket.emit('next-round');
+    }
   });
   document.getElementById('fac-puzzle-mode').addEventListener('change', (e) => {
-    socket.emit('set-puzzle-mode', e.target.value);
+    const newVal = e.target.value;
+    if (confirm(`Are you sure you want to change puzzle mode to ${newVal.toUpperCase()}?`)) {
+      lastPuzzleModeVal = newVal;
+      socket.emit('set-puzzle-mode', newVal);
+    } else {
+      e.target.value = lastPuzzleModeVal;
+    }
   });
   document.getElementById('btn-fac-reset').addEventListener('click', () => {
     if (confirm("Reset the entire simulation? Scores and connections will clear.")) {
@@ -670,15 +1309,19 @@ function setupEventListeners() {
     }
   });
   document.getElementById('btn-fac-exit').addEventListener('click', () => {
-    window.location.reload();
+    if (confirm("Are you sure you want to exit the facilitator console?")) {
+      window.location.reload();
+    }
   });
 
   document.getElementById('btn-adjust-score').addEventListener('click', () => {
     const teamId = document.getElementById('adjust-team').value;
     const val = parseInt(document.getElementById('adjust-amount').value, 10);
     if (!isNaN(val)) {
-      socket.emit('adjust-score', { teamId, adjustment: val });
-      document.getElementById('adjust-amount').value = '';
+      if (confirm(`Are you sure you want to adjust Team ${teamId.toUpperCase()}'s score by ${val}?`)) {
+        socket.emit('adjust-score', { teamId, adjustment: val });
+        document.getElementById('adjust-amount').value = '';
+      }
     }
   });
 
@@ -688,6 +1331,20 @@ function setupEventListeners() {
       socket.emit('request-solution-explanation');
     } else {
       details.classList.add('hidden');
+    }
+  });
+
+  // Facilitator manuals reference selector changes
+  document.getElementById('fac-ref-round').addEventListener('change', updateFacilitatorManualRef);
+  document.getElementById('fac-ref-role').addEventListener('change', updateFacilitatorManualRef);
+
+  document.getElementById('fac-final-round').addEventListener('change', (e) => {
+    const newVal = parseInt(e.target.value, 10);
+    if (confirm(`Are you sure you want to set the Final Normal Round to Round ${newVal}?`)) {
+      lastFinalRoundVal = newVal;
+      socket.emit('set-final-round', newVal);
+    } else {
+      e.target.value = lastFinalRoundVal;
     }
   });
 
@@ -709,6 +1366,11 @@ function setupEventListeners() {
         updateGlobalState(updateGlobalState.lastState);
       }
     } else {
+      myRole = role;
+      myTeam = teamId;
+      myName = name;
+      isLeader = (role === 'FA');
+
       showScreen('player-screen');
       document.getElementById('display-team-name').innerText = getTeamName(teamId);
       document.getElementById('display-team-name').className = `team-badge team-${teamId}`;
@@ -722,6 +1384,10 @@ function setupEventListeners() {
         document.getElementById('leader-lock-badge').innerText = "Terminal Read-Only";
         document.getElementById('leader-lock-badge').className = "badge badge-warning";
         document.getElementById('leader-only-warning').classList.remove('hidden');
+      }
+
+      if (updateGlobalState.lastState) {
+        updateGlobalState(updateGlobalState.lastState);
       }
     }
   });
@@ -821,6 +1487,15 @@ function updateGlobalState(state) {
   // Update Lobby Lists
   updateLobbyCrew(state.players);
 
+  // Update timer displays immediately from state.timer
+  const timeStr = formatTime(state.timer || 0);
+  if (document.getElementById('player-timer')) {
+    document.getElementById('player-timer').innerText = timeStr;
+  }
+  if (document.getElementById('fac-timer')) {
+    document.getElementById('fac-timer').innerText = timeStr;
+  }
+
   // If in Player Screen
   if (myRole && myRole !== 'facilitator') {
     updatePlayerView(state);
@@ -829,6 +1504,16 @@ function updateGlobalState(state) {
   // If in Facilitator Screen
   if (myRole === 'facilitator') {
     updateFacilitatorView(state);
+  }
+
+  // Show victory announcement popup when game ends
+  if (state.status === 'game_over') {
+    showWinnerAnnouncement(state);
+  } else {
+    // Hide winner modal if game reset or not game over
+    const modal = document.getElementById('winner-modal');
+    if (modal) modal.classList.add('hidden');
+    stopFireworks();
   }
 }
 
@@ -885,10 +1570,93 @@ function updateLobbyCrew(players) {
   }
 }
 
+let countdownInterval = null;
+let lastStartingCountdown = false;
+
+function handleCountdownOverlay(startingCountdown) {
+  const overlay = document.getElementById('countdown-overlay');
+  const numberEl = document.getElementById('countdown-number');
+  if (!overlay || !numberEl) return;
+
+  if (startingCountdown) {
+    if (!lastStartingCountdown) {
+      // Trigger new countdown
+      overlay.classList.remove('hidden');
+      let count = 5;
+      numberEl.innerText = count;
+      
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(() => {
+        count -= 1;
+        if (count > 0) {
+          numberEl.innerText = count;
+        } else if (count === 0) {
+          numberEl.innerText = "START!";
+        } else {
+          clearInterval(countdownInterval);
+          overlay.classList.add('hidden');
+        }
+      }, 1000);
+    }
+  } else {
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+    overlay.classList.add('hidden');
+  }
+  lastStartingCountdown = startingCountdown;
+}
+
+function updateScoringDashboard(state) {
+  if (!myTeam || !state.teams) return;
+
+  const team = state.teams[myTeam];
+  if (!team) return;
+
+  // Update Score
+  const scoreEl = document.getElementById('dash-team-score');
+  if (scoreEl) scoreEl.innerText = team.score;
+
+  // Calculate Rank (taking ties into account)
+  const sortedTeams = Object.values(state.teams).sort((a, b) => b.score - a.score);
+  let rank = 1;
+  for (let i = 0; i < sortedTeams.length; i++) {
+    if (sortedTeams[i].score > team.score) {
+      rank++;
+    }
+  }
+  
+  // Format rank with ordinal indicator: 1st, 2nd, 3rd, 4th
+  let ordinal = 'th';
+  if (rank === 1) ordinal = 'st';
+  else if (rank === 2) ordinal = 'nd';
+  else if (rank === 3) ordinal = 'rd';
+
+  const rankEl = document.getElementById('dash-team-rank');
+  if (rankEl) rankEl.innerHTML = `${rank}<span style="font-size: 1.2rem; vertical-align: top;">${ordinal}</span>`;
+}
+
 // Update Player Panel
 function updatePlayerView(state) {
   const team = state.teams[myTeam];
   const roundNum = state.currentRound;
+
+  // Update scoring dashboard
+  updateScoringDashboard(state);
+
+  // Handle countdown overlay
+  handleCountdownOverlay(state.startingCountdown);
+
+  // Handle pause overlay visibility
+  const pauseOverlay = document.getElementById('pause-overlay');
+  if (pauseOverlay) {
+    if (state.status === 'active' && !state.timerActive && state.timer > 0) {
+      pauseOverlay.classList.remove('hidden');
+    } else {
+      pauseOverlay.classList.add('hidden');
+    }
+  }
 
   // Title & Score Display
   const titleData = puzzles[roundNum];
@@ -922,8 +1690,8 @@ function updatePlayerView(state) {
     document.getElementById('brief-content').innerHTML = roundsData[roundNum].brief;
     document.getElementById('manual-content').innerHTML = roundsData[roundNum].roles[myRole] || '<p>No specific manual for this role.</p>';
 
-    // Initialize sequence array if Round 6 and standard mode
-    if (roundNum === 6) {
+    // Initialize sequence array if Round 10 and standard mode
+    if (roundNum === 10) {
       currentSequence = [...defaultSteps];
       if (state.puzzleMode === 'standard') {
         renderSequenceItems();
@@ -962,21 +1730,19 @@ function updatePlayerView(state) {
       </div>
       ` : ''}
     `;
-    submitBtn.disabled = true;
   } else if (!state.timerActive) {
     statusBox.className = "status-box status-idle";
     statusBox.style.flexDirection = "";
     statusBox.style.alignItems = "";
     statusText.innerText = "System Awaiting Authorization... (Timer Paused)";
-    submitBtn.disabled = true;
   } else {
     statusBox.className = "status-box status-active";
     statusBox.style.flexDirection = "";
     statusBox.style.alignItems = "";
     statusText.innerText = "CALIBRATION TERMINALS ACTIVE. Awaiting inputs...";
-    // Only Team Lead can press submit
-    submitBtn.disabled = !isLeader;
   }
+
+  updateSubmitButtonState();
 
   // Update Report Modal if status is end_round
   updateReportModal(state);
@@ -1006,7 +1772,7 @@ function toggleInputs(disabled) {
 // Gather all inputs to build answers object
 function gatherFormAnswers() {
   const puzzleMode = (updateGlobalState.lastState ? updateGlobalState.lastState.puzzleMode : 'standard');
-  if (activeRound === 6 && puzzleMode === 'standard') {
+  if (activeRound === 10 && puzzleMode === 'standard') {
     return { sequence: currentSequence };
   }
 
@@ -1028,13 +1794,14 @@ function gatherFormAnswers() {
 // Sync edits in drafts to teammates
 function syncDraftAnswers() {
   const puzzleMode = (updateGlobalState.lastState ? updateGlobalState.lastState.puzzleMode : 'standard');
-  if (activeRound === 6 && puzzleMode === 'standard') {
+  if (activeRound === 10 && puzzleMode === 'standard') {
     socket.emit('update-draft-answers', { sequence: currentSequence });
     return;
   }
 
   const drafts = gatherFormAnswers();
   socket.emit('update-draft-answers', drafts);
+  updateSubmitButtonState();
 }
 
 // Populate draft edits from socket updates
@@ -1042,7 +1809,7 @@ function populateDraftAnswers(drafts) {
   if (!drafts) return;
   
   const puzzleMode = (updateGlobalState.lastState ? updateGlobalState.lastState.puzzleMode : 'standard');
-  if (activeRound === 6 && puzzleMode === 'standard' && drafts.sequence) {
+  if (activeRound === 10 && puzzleMode === 'standard' && drafts.sequence) {
     currentSequence = [...drafts.sequence];
     renderSequenceItems();
     return;
@@ -1066,6 +1833,7 @@ function populateDraftAnswers(drafts) {
       }
     }
   }
+  updateSubmitButtonState();
 }
 
 // Shift items in Tie Breaker sequence
@@ -1116,7 +1884,7 @@ function formatSubmittedAnswersForPlayer(roundNum, submittedAnswers, puzzleMode)
     const q2Text = data.objectiveQuestions.q2.options[q2Idx] || (submittedAnswers.q2 || 'None');
     return `Q1: "${q1Text}" | Q2: "${q2Text}"`;
   } else {
-    if (roundNum === 6) {
+    if (roundNum === 10) {
       const seq = submittedAnswers.sequence || [];
       return `Sequence: ${seq.join(' > ')}`;
     }
@@ -1193,12 +1961,28 @@ window.closeReportModal = function() {
 function updateFacilitatorView(state) {
   // Update status labels
   document.getElementById('fac-game-status').innerText = state.status.toUpperCase();
-  document.getElementById('fac-current-round').innerText = state.currentRound === 6 ? "TIE-BREAKER" : `Round ${state.currentRound}`;
+  document.getElementById('fac-current-round').innerText = state.currentRound === 10 ? "TIE-BREAKER" : `Round ${state.currentRound}`;
 
   const modeSelector = document.getElementById('fac-puzzle-mode');
   if (modeSelector) {
     modeSelector.value = state.puzzleMode;
-    modeSelector.disabled = (state.status !== 'lobby');
+    lastPuzzleModeVal = state.puzzleMode;
+    const canChangeMode = (state.status === 'lobby' || state.status === 'end_round' || (state.status === 'active' && state.timer === 0 && !state.timerActive));
+    modeSelector.disabled = !canChangeMode;
+  }
+
+  const finalRoundSelector = document.getElementById('fac-final-round');
+  if (finalRoundSelector) {
+    if (state.finalRound !== undefined) {
+      finalRoundSelector.value = state.finalRound;
+      lastFinalRoundVal = state.finalRound;
+    }
+    finalRoundSelector.disabled = (state.status !== 'lobby');
+  }
+
+  const tipsContent = document.getElementById('fac-tips-content');
+  if (tipsContent) {
+    tipsContent.innerHTML = roundsData[state.currentRound]?.tips || '<p>No specific tips for this round.</p>';
   }
 
   // Enable/Disable admin buttons appropriately
@@ -1207,32 +1991,57 @@ function updateFacilitatorView(state) {
   document.getElementById('btn-fac-end-round').disabled = (state.status !== 'active');
   document.getElementById('btn-fac-next-round').disabled = (state.status !== 'end_round');
 
-  // Update Leaderboard bars dynamically sorted descending
+  // Update Leaderboard tanks dynamically sorted descending
   const leaderboardContainer = document.getElementById('fac-leaderboard-bars');
   if (leaderboardContainer) {
     leaderboardContainer.innerHTML = '';
     const maxScore = Math.max(...Object.values(state.teams).map(t => t.score), 1);
     const sortedTeams = Object.values(state.teams).sort((a, b) => b.score - a.score);
-    const teamGradients = {
-      alpha: 'linear-gradient(90deg, hsl(190, 85%, 45%), hsl(190, 85%, 60%))',
-      beta: 'linear-gradient(90deg, hsl(280, 80%, 50%), hsl(280, 80%, 65%))',
-      gamma: 'linear-gradient(90deg, hsl(30, 95%, 45%), hsl(30, 95%, 60%))',
-      delta: 'linear-gradient(90deg, hsl(120, 70%, 40%), hsl(120, 70%, 55%))'
+    const displayMax = Math.max(maxScore, 1000);
+
+    const teamIcons = {
+      alpha: `<svg class="facility-icon" viewBox="0 0 40 40"><path d="M6 36 L14 18 L26 18 L34 36 M15 18 L15 6 L25 6 L25 18 M12 24 L28 24 M8 31 L32 31 M10 36 L18 18 M30 36 L22 18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="20" cy="6" r="2" fill="currentColor"/></svg>`,
+      beta: `<svg class="facility-icon" viewBox="0 0 40 40"><path d="M4 25 L6 14 L34 14 L36 25 L32 30 L8 30 Z" stroke="currentColor" stroke-width="2" fill="currentColor"/><rect x="14" y="6" width="4" height="8" fill="currentColor"/><rect x="22" y="4" width="3" height="10" fill="currentColor"/><path d="M8 30 Q20 33 32 30" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`,
+      gamma: `<svg class="facility-icon" viewBox="0 0 40 40"><rect x="8" y="6" width="10" height="30" rx="1.5" fill="currentColor"/><rect x="22" y="14" width="10" height="22" rx="1" fill="currentColor"/><path d="M13 14 L27 22 M13 22 L27 30 M18 6 L18 36 M22 14 L22 36" stroke="currentColor" stroke-width="1.5"/><path d="M13 6 Q13 3 15 3 Q17 3 17 6" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>`,
+      delta: `<svg class="facility-icon" viewBox="0 0 40 40"><path d="M4 22 L10 12 L30 12 L36 22 L33 29 L7 29 Z" fill="currentColor" stroke="currentColor" stroke-width="1"/><circle cx="20" cy="18" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 18 L24 18 M20 14 L20 22" stroke="currentColor" stroke-width="2"/><rect x="6" y="29" width="28" height="3" fill="currentColor"/></svg>`
     };
 
+    const tanksWrapper = document.createElement('div');
+    tanksWrapper.className = 'leaderboard-tanks';
+
     sortedTeams.forEach(team => {
-      const percentage = Math.max((team.score / maxScore) * 100, 5);
-      const row = document.createElement('div');
-      row.className = 'leader-bar-row';
-      row.innerHTML = `
-        <div class="leader-team-name">${team.name}</div>
-        <div class="leader-bar-wrapper">
-          <div id="bar-${team.id}" class="leader-bar" style="width: ${percentage}%; background: ${teamGradients[team.id] || 'var(--primary)'};"></div>
+      const percentage = Math.min(Math.max((team.score / displayMax) * 100, 5), 100);
+      const tankHtml = `
+        <div class="tank-container tank-${team.id}">
+          <div class="tank-label">${team.name}</div>
+          <div class="glass-tank">
+            <div class="tank-scale">
+              <span>${displayMax}</span>
+              <span>${Math.round(displayMax * 0.75)}</span>
+              <span>${Math.round(displayMax * 0.5)}</span>
+              <span>${Math.round(displayMax * 0.25)}</span>
+              <span>0</span>
+            </div>
+            <div class="tank-liquid" style="height: ${percentage}%;">
+              <div class="liquid-wave"></div>
+              <div class="bubble b1"></div>
+              <div class="bubble b2"></div>
+              <div class="bubble b3"></div>
+            </div>
+            <div class="tank-float-badge" style="bottom: ${percentage}%;">
+              <span class="badge-val">${team.score}</span>
+            </div>
+          </div>
+          <div class="tank-base">
+            ${teamIcons[team.id] || ''}
+            <div class="base-led-score">${team.score}</div>
+          </div>
         </div>
-        <div id="score-${team.id}" class="leader-score">${team.score} pts</div>
       `;
-      leaderboardContainer.appendChild(row);
+      tanksWrapper.innerHTML += tankHtml;
     });
+    
+    leaderboardContainer.appendChild(tanksWrapper);
   }
 
   // Update Progress Matrix Table
@@ -1263,6 +2072,14 @@ function updateFacilitatorView(state) {
   // Update Solution Box details
   document.getElementById('solution-round-title').innerText = puzzles[state.currentRound]?.title || `Round ${state.currentRound}`;
   document.getElementById('solution-explanation').innerText = puzzles[state.currentRound]?.solutionExplanation || 'No solution details available.';
+
+  // Auto-sync manuals reference round to current active round on round change
+  const refRoundSelect = document.getElementById('fac-ref-round');
+  if (refRoundSelect && refRoundSelect.dataset.lastAutoSync !== String(state.currentRound)) {
+    refRoundSelect.value = state.currentRound;
+    refRoundSelect.dataset.lastAutoSync = state.currentRound;
+    updateFacilitatorManualRef();
+  }
 }
 
 // Add console entry helper
@@ -1308,11 +2125,15 @@ function formatTime(sec) {
 
 const puzzles = {
   1: { title: "Round 1: Wrench Time Optimization" },
-  2: { title: "Round 2: Maintenance Backlog" },
-  3: { title: "Round 3: Preventive Maintenance (PM)" },
-  4: { title: "Round 4: Planning Quality (PQI)" },
-  5: { title: "Round 5: Wrench Time Measurement" },
-  6: { title: "Tie-Breaker: Shell Maintenance Cycle" }
+  2: { title: "Round 2: Maintenance Backlog & Campaigns" },
+  3: { title: "Round 3: PM Compliance & Execution" },
+  4: { title: "Round 4: Planning Quality Index (PQI)" },
+  5: { title: "Round 5: Subsea Well Decommissioning" },
+  6: { title: "Round 6: Turbine Bearing Spares (MMS)" },
+  7: { title: "Round 7: Piping Corrosion Inspection" },
+  8: { title: "Round 8: ESD Valve Testing Intervals" },
+  9: { title: "Round 9: Operator Competency & Flaring" },
+  10: { title: "Tie-Breaker: SCL Maintenance Execution Cycle" }
 };
 
 function generateObjectiveFormHtml(roundNum) {
@@ -1325,7 +2146,7 @@ function generateObjectiveFormHtml(roundNum) {
   let html = `
     <div class="objective-form-wrap" style="display: flex; flex-direction: column; gap: 20px; text-align: left;">
       <div class="input-group">
-        <label style="font-weight: 600; display: block; margin-bottom: 10px; font-size: 0.95rem; color: var(--text);">
+        <label style="font-weight: 600; display: block; margin-bottom: 10px; font-size: 0.95rem; color: var(--text-strong);">
           Question 1: ${q1.text}
         </label>
         <div class="objective-options" style="display: flex; flex-direction: column; gap: 10px;">
@@ -1333,7 +2154,7 @@ function generateObjectiveFormHtml(roundNum) {
   
   q1.options.forEach((opt, idx) => {
     html += `
-      <label class="radio-option-lbl" style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; transition: background 0.2s;">
+      <label class="radio-option-lbl">
         <input type="radio" name="ans-q1" id="ans-q1-${idx}" value="${idx}" class="draft-sync" onchange="syncDraftAnswers()" style="margin-top: 3px; cursor: pointer;">
         <span>${opt}</span>
       </label>
@@ -1344,7 +2165,7 @@ function generateObjectiveFormHtml(roundNum) {
         </div>
       </div>
       <div class="input-group">
-        <label style="font-weight: 600; display: block; margin-bottom: 10px; font-size: 0.95rem; color: var(--text);">
+        <label style="font-weight: 600; display: block; margin-bottom: 10px; font-size: 0.95rem; color: var(--text-strong);">
           Question 2: ${q2.text}
         </label>
         <div class="objective-options" style="display: flex; flex-direction: column; gap: 10px;">
@@ -1352,7 +2173,7 @@ function generateObjectiveFormHtml(roundNum) {
   
   q2.options.forEach((opt, idx) => {
     html += `
-      <label class="radio-option-lbl" style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; transition: background 0.2s;">
+      <label class="radio-option-lbl">
         <input type="radio" name="ans-q2" id="ans-q2-${idx}" value="${idx}" class="draft-sync" onchange="syncDraftAnswers()" style="margin-top: 3px; cursor: pointer;">
         <span>${opt}</span>
       </label>
@@ -1367,3 +2188,271 @@ function generateObjectiveFormHtml(roundNum) {
   
   return html;
 }
+
+// Update the disabled state of the submit button based on current selections and game state
+function updateSubmitButtonState() {
+  const submitBtn = document.getElementById('btn-submit-answer');
+  if (!submitBtn) return;
+
+  const state = updateGlobalState.lastState;
+  if (!state) return;
+
+  const team = state.teams[myTeam];
+  const roundNum = state.currentRound;
+  const status = team ? (team.roundStatus[roundNum] || { solved: false }) : { solved: false };
+
+  if (status.solved || !state.timerActive) {
+    submitBtn.disabled = true;
+    return;
+  }
+
+  if (!isLeader) {
+    submitBtn.disabled = true;
+    return;
+  }
+
+  if (state.puzzleMode === 'objective') {
+    const q1Checked = document.querySelector('input[name="ans-q1"]:checked');
+    const q2Checked = document.querySelector('input[name="ans-q2"]:checked');
+    submitBtn.disabled = !(q1Checked && q2Checked);
+  } else {
+    submitBtn.disabled = false;
+  }
+}
+
+// Update facilitator manuals reference deck content
+function updateFacilitatorManualRef() {
+  const roundSelect = document.getElementById('fac-ref-round');
+  const roleSelect = document.getElementById('fac-ref-role');
+  const contentDiv = document.getElementById('fac-ref-manual-content');
+  if (!roundSelect || !roleSelect || !contentDiv) return;
+
+  const round = parseInt(roundSelect.value, 10);
+  const role = roleSelect.value;
+  if (roundsData[round] && roundsData[round].roles) {
+    contentDiv.innerHTML = roundsData[round].roles[role] || '<p>No specific manual for this role.</p>';
+  }
+}
+
+// Theme Management Functions
+function applyTheme(theme) {
+  if (theme === 'light') {
+    document.body.classList.remove('theme-dark');
+    document.body.classList.add('theme-light');
+    const icon = document.querySelector('#theme-toggle-btn .theme-icon');
+    if (icon) icon.innerHTML = '&#x263E;'; // Moon symbol
+  } else {
+    document.body.classList.remove('theme-light');
+    document.body.classList.add('theme-dark');
+    const icon = document.querySelector('#theme-toggle-btn .theme-icon');
+    if (icon) icon.innerHTML = '&#x2600;'; // Sun symbol
+  }
+}
+
+window.toggleTheme = function() {
+  const currentTheme = localStorage.getItem('game-theme') || 'dark';
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  
+  const btn = document.getElementById('theme-toggle-btn');
+  if (btn) {
+    btn.classList.add('clicked');
+    setTimeout(() => {
+      btn.classList.remove('clicked');
+    }, 500);
+  }
+
+  const overlay = document.getElementById('theme-transition-overlay');
+  if (overlay) {
+    overlay.style.backgroundColor = newTheme === 'light' ? 'hsl(210, 20%, 92%)' : 'hsl(222, 28%, 7%)';
+    overlay.classList.add('animating');
+    document.body.classList.add('theme-toggling');
+    
+    setTimeout(() => {
+      localStorage.setItem('game-theme', newTheme);
+      applyTheme(newTheme);
+    }, 350);
+    
+    setTimeout(() => {
+      overlay.classList.remove('animating');
+      document.body.classList.remove('theme-toggling');
+    }, 850);
+  } else {
+    localStorage.setItem('game-theme', newTheme);
+    applyTheme(newTheme);
+  }
+};
+
+// Immediately execute to prevent flash of wrong theme before DOM load
+(function() {
+  const savedTheme = localStorage.getItem('game-theme') || 'dark';
+  document.body.classList.add(savedTheme === 'light' ? 'theme-light' : 'theme-dark');
+  document.body.classList.remove(savedTheme === 'light' ? 'theme-dark' : 'theme-light');
+})();
+
+// Fireworks animation system
+let fireworksAnimationId = null;
+function startFireworks() {
+  const canvas = document.getElementById('fireworks-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  
+  const particles = [];
+  const rockets = [];
+  
+  class Rocket {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = canvas.height;
+      this.tx = Math.random() * canvas.width;
+      this.ty = Math.random() * (canvas.height * 0.5);
+      this.speed = 4 + Math.random() * 4;
+      this.angle = Math.atan2(this.ty - this.y, this.tx - this.x);
+      this.vx = Math.cos(this.angle) * this.speed;
+      this.vy = Math.sin(this.angle) * this.speed;
+      this.color = `hsl(${Math.random() * 360}, 100%, 65%)`;
+    }
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      const dist = Math.hypot(this.tx - this.x, this.ty - this.y);
+      if (dist < 10 || this.y < this.ty) {
+        explode(this.x, this.y, this.color);
+        return false;
+      }
+      return true;
+    }
+    draw() {
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  
+  class Particle {
+    constructor(x, y, color) {
+      this.x = x;
+      this.y = y;
+      this.color = color;
+      this.vx = (Math.random() - 0.5) * 8;
+      this.vy = (Math.random() - 0.5) * 8;
+      this.alpha = 1;
+      this.gravity = 0.08;
+      this.decay = 0.012 + Math.random() * 0.015;
+    }
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.vy += this.gravity;
+      this.alpha -= this.decay;
+      return this.alpha > 0;
+    }
+    draw() {
+      ctx.save();
+      ctx.globalAlpha = this.alpha;
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+  
+  function explode(x, y, color) {
+    const count = 40 + Math.floor(Math.random() * 20);
+    for (let i = 0; i < count; i++) {
+      particles.push(new Particle(x, y, color));
+    }
+  }
+  
+  function animate() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (Math.random() < 0.06 && rockets.length < 5) {
+      rockets.push(new Rocket());
+    }
+    
+    for (let i = rockets.length - 1; i >= 0; i--) {
+      if (!rockets[i].update()) {
+        rockets.splice(i, 1);
+      } else {
+        rockets[i].draw();
+      }
+    }
+    
+    for (let i = particles.length - 1; i >= 0; i--) {
+      if (!particles[i].update()) {
+        particles.splice(i, 1);
+      } else {
+        particles[i].draw();
+      }
+    }
+    
+    fireworksAnimationId = requestAnimationFrame(animate);
+  }
+  
+  animate();
+  
+  const resizeHandler = () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  };
+  window.addEventListener('resize', resizeHandler);
+  canvas._resizeHandler = resizeHandler;
+}
+
+function stopFireworks() {
+  if (fireworksAnimationId) {
+    cancelAnimationFrame(fireworksAnimationId);
+    fireworksAnimationId = null;
+  }
+  const canvas = document.getElementById('fireworks-canvas');
+  if (canvas) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (canvas._resizeHandler) {
+      window.removeEventListener('resize', canvas._resizeHandler);
+      delete canvas._resizeHandler;
+    }
+  }
+}
+
+// Show victory screen
+function showWinnerAnnouncement(state) {
+  const modal = document.getElementById('winner-modal');
+  if (!modal) return;
+
+  const sortedTeams = Object.values(state.teams).sort((a, b) => b.score - a.score);
+  const winnerTeam = sortedTeams[0];
+  if (!winnerTeam) return;
+
+  const winnerPlayers = Object.values(state.players)
+    .filter(p => p.teamId === winnerTeam.id)
+    .map(p => `${p.name} (${getRoleName(p.roleId)})`);
+
+  const teamTitleEl = document.getElementById('winner-team-title');
+  if (teamTitleEl) {
+    teamTitleEl.innerText = winnerTeam.name.toUpperCase();
+  }
+  
+  const namesEl = document.getElementById('winner-crew-names');
+  if (namesEl) {
+    namesEl.innerHTML = winnerPlayers.length > 0 ? winnerPlayers.join(', ') : '<span style="font-style: italic; opacity: 0.6;">(No operators registered on this team)</span>';
+  }
+
+  modal.classList.remove('hidden');
+  startFireworks();
+}
+
+window.closeWinnerModal = function() {
+  const modal = document.getElementById('winner-modal');
+  if (modal) modal.classList.add('hidden');
+  stopFireworks();
+};
+
+
+
