@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Natural Remedy Advisor</string>
+    <string name="title_activity_main">Natural Remedy Advisor</string>
+    <string name="package_name">com.naturalremedyadvisor.app</string>
+    <string name="custom_url_scheme">com.naturalremedyadvisor.app</string>
+</resources>

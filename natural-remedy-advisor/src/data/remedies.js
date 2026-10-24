@@ -1,0 +1,152 @@
+// Evidence levels:
+//   strong      – supported by good clinical trials / guidelines
+//   some        – some human studies, mixed or modest effect
+//   traditional – long traditional use, little or no clinical evidence
+export const EVIDENCE = {
+  strong: { label: 'Strong evidence', cls: 'ev-strong' },
+  some: { label: 'Some evidence', cls: 'ev-some' },
+  traditional: { label: 'Traditional use', cls: 'ev-trad' },
+};
+
+export const remedies = [
+  {
+    name: 'Ginger tea',
+    for: ['nausea', 'morning sickness', 'motion sickness', 'digestion'],
+    evidence: 'strong',
+    how: 'Simmer 3–4 thin slices of fresh ginger in a cup of water for 10 minutes. Sip slowly.',
+    caution: 'Large amounts may add to blood-thinning medication effects.',
+  },
+  {
+    name: 'Honey for cough',
+    for: ['cough', 'sore throat', 'cold'],
+    evidence: 'strong',
+    how: '1–2 teaspoons of raw honey, alone or in warm water with lemon, especially before bed.',
+    caution: 'Never give honey to babies under 1 year (botulism risk).',
+  },
+  {
+    name: 'Salt water gargle',
+    for: ['sore throat', 'cold'],
+    evidence: 'some',
+    how: 'Dissolve ½ teaspoon salt in a glass of warm water. Gargle and spit, several times a day.',
+    caution: 'Don\'t swallow. Not for young children who cannot gargle.',
+  },
+  {
+    name: 'Hot foot bath',
+    for: ['cold', 'congestion', 'headache', 'cold feet', 'insomnia'],
+    evidence: 'traditional',
+    how: 'Soak feet in comfortably hot water (add mustard powder if you like) for 15–20 minutes, with a cool cloth on the forehead. Finish with a cold rinse and dry well.',
+    caution: 'Avoid with diabetes, neuropathy or poor circulation (burn risk from reduced sensation).',
+  },
+  {
+    name: 'Hot and cold contrast hydrotherapy',
+    for: ['circulation', 'immunity', 'muscle soreness', 'fatigue'],
+    evidence: 'traditional',
+    how: 'In the shower alternate 3 minutes hot with 30 seconds cold, 3 rounds, always ending on cold.',
+    caution: 'Avoid with heart disease, uncontrolled blood pressure, pregnancy or Raynaud\'s without medical advice.',
+  },
+  {
+    name: 'Steam inhalation',
+    for: ['congestion', 'sinus', 'cold'],
+    evidence: 'traditional',
+    how: 'Lean over a bowl of hot (not boiling) water with a towel over your head for 5–10 minutes. A drop of eucalyptus oil is optional.',
+    caution: 'Scald risk: never for children. Studies show comfort, not faster recovery.',
+  },
+  {
+    name: 'Castor oil pack',
+    for: ['constipation', 'abdominal discomfort', 'liver support', 'menstrual cramps'],
+    evidence: 'traditional',
+    how: 'Soak flannel in castor oil, place over the abdomen, cover with plastic wrap and a warm (not hot) hot-water bottle for 45–60 minutes.',
+    caution: 'External use only. Not during pregnancy, menstruation with heavy flow, or on broken skin.',
+  },
+  {
+    name: 'Activated charcoal poultice',
+    for: ['insect bite', 'sting', 'spider bite', 'boil', 'splinter'],
+    evidence: 'traditional',
+    how: 'Mix charcoal powder with a little water (or ground flaxseed) into a paste, spread on gauze, apply and cover. Change every few hours.',
+    caution: 'Seek urgent care for bites from venomous species or signs of allergy. Oral charcoal blocks absorption of medications.',
+  },
+  {
+    name: 'Onion poultice',
+    for: ['earache', 'chest congestion', 'cough'],
+    evidence: 'traditional',
+    how: 'Gently warm chopped onion, wrap in thin cloth and place over (not in) the ear or on the chest for 20–30 minutes.',
+    caution: 'See a doctor for ear discharge, fever, severe pain or symptoms over 2–3 days. Check warmth on your wrist first.',
+  },
+  {
+    name: 'Garlic',
+    for: ['cold', 'immunity', 'blood pressure'],
+    evidence: 'some',
+    how: 'Crush 1–2 raw cloves, wait 10 minutes, then add to food, honey or a spoon of olive oil.',
+    caution: 'Can increase bleeding risk with blood thinners and before surgery.',
+  },
+  {
+    name: 'Apple cider vinegar',
+    for: ['blood sugar', 'digestion', 'heartburn'],
+    evidence: 'some',
+    how: '1–2 teaspoons of raw ACV in a glass of water before meals. Drink through a straw.',
+    caution: 'Always dilute; it erodes tooth enamel. Can lower potassium and interact with diabetes medication.',
+  },
+  {
+    name: 'Peppermint',
+    for: ['ibs', 'bloating', 'indigestion', 'headache'],
+    evidence: 'strong',
+    how: 'Peppermint tea after meals; enteric-coated peppermint oil capsules for IBS; diluted oil on the temples for tension headache.',
+    caution: 'Can worsen reflux/heartburn. Keep oil away from babies\' faces.',
+  },
+  {
+    name: 'Chamomile tea',
+    for: ['insomnia', 'anxiety', 'stress', 'digestion'],
+    evidence: 'some',
+    how: 'Steep 1–2 teaspoons of dried flowers in hot water for 5–10 minutes. Drink an hour before bed.',
+    caution: 'Avoid if allergic to ragweed/daisy family. May interact with blood thinners.',
+  },
+  {
+    name: 'Turmeric with black pepper',
+    for: ['inflammation', 'joint pain', 'arthritis'],
+    evidence: 'some',
+    how: '½–1 teaspoon turmeric with a pinch of black pepper and some fat, in food or warm plant milk ("golden milk").',
+    caution: 'Interacts with blood thinners and diabetes medication; avoid with gallstones.',
+  },
+  {
+    name: 'Cabbage leaf compress',
+    for: ['breast engorgement', 'swelling', 'joint pain'],
+    evidence: 'some',
+    how: 'Chill clean green cabbage leaves, crush the veins slightly and lay over the area for 20 minutes.',
+    caution: 'See a doctor for breast redness with fever (possible mastitis).',
+  },
+  {
+    name: 'Aloe vera gel',
+    for: ['minor burn', 'sunburn', 'skin irritation'],
+    evidence: 'some',
+    how: 'Cool the burn under running water for 20 minutes first, then apply fresh aloe gel.',
+    caution: 'For minor burns only. Large, blistered, facial or electrical burns need medical care.',
+  },
+  {
+    name: 'Fermented foods',
+    for: ['gut health', 'digestion', 'immunity', 'bloating'],
+    evidence: 'some',
+    how: 'A forkful of sauerkraut or kimchi, or a little kefir or yoghurt, with meals daily. Start small.',
+    caution: 'Can cause gas at first. Caution if severely immunocompromised.',
+  },
+  {
+    name: 'Oil pulling',
+    for: ['oral health', 'bad breath', 'gums'],
+    evidence: 'traditional',
+    how: 'Swish 1 tablespoon of coconut oil around the mouth for 10–15 minutes, spit in the bin (not the sink), then brush.',
+    caution: 'Add to brushing and flossing, never replace them.',
+  },
+  {
+    name: 'Time-restricted eating',
+    for: ['weight', 'blood sugar', 'digestion'],
+    evidence: 'some',
+    how: 'Eat within an 8–10 hour window, with an early last meal and nothing but water overnight.',
+    caution: 'Not for pregnancy, under-18s, eating disorders, or diabetes on insulin/sulfonylureas without a doctor.',
+  },
+  {
+    name: 'Lemon & warm water',
+    for: ['constipation', 'hydration', 'digestion'],
+    evidence: 'traditional',
+    how: 'Juice of half a lemon in a glass of warm water first thing in the morning.',
+    caution: 'Rinse with plain water afterwards to protect tooth enamel.',
+  },
+];
