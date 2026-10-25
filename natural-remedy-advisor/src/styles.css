@@ -232,3 +232,32 @@ dialog h2 { font-size: 1.4rem; margin-bottom: 6px; }
 .secondary.full { width: 100%; margin: 6px 0 4px; }
 .disclaimer { font-size: .8rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; margin-top: 20px; }
 #ob-start { position: sticky; bottom: 0; box-shadow: 0 -8px 16px var(--surface); }
+
+/* ---------- Intro & clarity ---------- */
+.topbar .icon-btn + .icon-btn { margin-left: 0; }
+#open-help { font-weight: 700; color: #f4efe2; }
+.hero-sub { margin: -4px 0 10px; font-size: .85rem; opacity: .85; }
+.section-sub { margin: -4px 0 12px; color: var(--muted); font-size: .86rem; }
+#intro { overflow: hidden; padding: 22px 0; }
+.slides { display: flex; transition: transform .35s ease; }
+.slide { flex: 0 0 100%; padding: 0 22px; }
+.slide p { margin: 8px 0; }
+.slide-art { font-size: 3rem; margin-bottom: 4px; }
+.steps { padding-left: 20px; margin: 10px 0; display: grid; gap: 8px; }
+.fine { font-size: .78rem; color: var(--muted); background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.dots { display: flex; justify-content: center; gap: 6px; margin: 14px 0; }
+.dots i { width: 8px; height: 8px; border-radius: 4px; background: var(--line); transition: width .2s, background .2s; }
+.dots i.on { width: 22px; background: var(--forest-2); }
+#intro-next { width: calc(100% - 44px); margin: 0 22px; }
+.acronym { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 14px 0 6px; }
+.acro { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 12px; background: color-mix(in srgb, var(--law) 14%, var(--surface)); font-size: .78rem; line-height: 1.2; }
+.acro b, .law-letter {
+  flex: none; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px;
+  background: var(--law); color: #fff; font-family: var(--serif); font-size: .95rem;
+}
+.acronym.small .acro { padding: 6px; font-size: .72rem; }
+.law-top { display: flex; justify-content: space-between; align-items: flex-start; }
+.law .law-letter { margin-right: 26px; opacity: .9; }
+.law.done .law-letter { visibility: hidden; }
+.law-card .law-letter { vertical-align: middle; margin-right: 4px; }
+.why { font-style: italic; color: var(--muted); }

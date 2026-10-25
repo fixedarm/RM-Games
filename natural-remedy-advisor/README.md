@@ -1,12 +1,12 @@
 # Natural Remedy Advisor
 
-Natural diet, lifestyle and home-remedy advisor built on the **eight laws of health** (nutrition, water, sunlight, exercise, fresh air, rest, temperance, trust). Web app (installable PWA) + Android app (Capacitor), with a Gemini-powered AI advisor.
+Natural diet, lifestyle and home-remedy advisor built on the **9 pillars of health**, SUSTAIN ME (Sunshine, Use of water, Sleep, Trust, Abstain, Inhale fresh air, Nutrition, Moderation, Exercise). Web app (installable PWA) + Android app (Capacitor), with a Gemini-powered AI advisor.
 
 ## Features
-- **Advisor**: Gemini chat that follows the eight laws and the built-in remedy library, labels evidence levels, and flags interactions.
-- **Remedies**: searchable library of 20 home remedies, each with how-to, evidence level and cautions.
-- **Habits**: daily 8-laws checklist with a 7-day chart (stored on the device).
-- **Learn**: the eight principles explained.
+- **Advisor**: Gemini chat that follows the 9 pillars and the built-in remedy library, labels evidence levels, and flags interactions.
+- **Remedies**: searchable library of 25 home remedies, each with how-to, evidence level and cautions.
+- **Today**: goal-based daily plan, 9-pillar checklist, streak and 7-day chart (stored on the device).
+- **Pillars**: the nine pillars explained.
 - **Safety**: emergency/red-flag phrases (chest pain, stroke signs, cancer, stopping medication…) are caught on the device *and* the server and never reach the model. The system prompt forbids anti-medication, anti-vaccine and "cure" claims.
 
 ## Architecture
@@ -42,7 +42,7 @@ npm run android:open          # Android Studio → Build → Generate Signed Bun
 ```
 
 ## Content
-- `src/data/principles.js`: the eight laws
+- `src/data/principles.js`: the nine pillars
 - `src/data/remedies.js`: remedy library (evidence: strong / some / traditional)
 - `src/data/redflags.js`: emergency patterns, shared by the client and the server
 

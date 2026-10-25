@@ -68,17 +68,35 @@ showTab(store.get('tab', 'today'));
 let profile = store.get('profile', {});
 const currentGoal = () => goalById(profile.goal) || goals[0];
 
-/* ---------- Consent ---------- */
-if (!store.get('consent', false)) {
-  $('#consent').showModal();
-  $('#consent-ok').addEventListener('click', () => {
-    store.set('consent', true);
-    $('#consent').close();
-    if (!profile.goal) openOnboarding();
-  });
-} else if (!profile.goal) {
-  queueMicrotask(() => openOnboarding());
+/* ---------- Intro ---------- */
+const acronymHtml = () =>
+  principles.map((p) => `<div class="acro" style="--law:${p.color}"><b>${p.letter}</b><span>${p.name}</span></div>`).join('');
+$('#intro-acronym').innerHTML = acronymHtml();
+$('#acronym').innerHTML = acronymHtml();
+
+let slide = 0;
+function showSlide(i) {
+  slide = i;
+  $('#slides').style.transform = `translateX(-${i * 100}%)`;
+  document.querySelectorAll('#dots i').forEach((d, j) => d.classList.toggle('on', j === i));
+  $('#intro-next').textContent = i === 2 ? "I understand, let's start" : 'Next';
 }
+function openIntro() {
+  showSlide(0);
+  $('#intro').showModal();
+}
+$('#intro-next').addEventListener('click', () => {
+  if (slide < 2) return showSlide(slide + 1);
+  store.set('consent', true);
+  $('#intro').close();
+  if (!profile.goal) openOnboarding();
+});
+$('#intro').addEventListener('cancel', (e) => {
+  if (!store.get('consent', false)) e.preventDefault();
+});
+$('#open-help').addEventListener('click', openIntro);
+if (!store.get('consent', false)) openIntro();
+else if (!profile.goal) queueMicrotask(() => openOnboarding());
 
 /* ---------- Onboarding (goal) ---------- */
 let pickedGoal = null;
@@ -134,7 +152,7 @@ function renderChat() {
   chatEl.innerHTML = '';
   if (!history.length) {
     addBubble('assistant', renderMarkdown(
-      'Hi! Tell me what\'s bothering you, or ask about food and healthy habits. I\'ll suggest natural approaches based on the **eight laws of health**, and tell you honestly how strong the evidence is.',
+      'Hi! Tell me what\'s bothering you, or ask about food and healthy habits. I\'ll suggest natural approaches based on the **9 pillars of health**, and tell you honestly how strong the evidence is.',
     ));
   }
   history.forEach((m) => addBubble(m.role, m.urgent ? urgentHtml(m.flags) : m.role === 'user' ? escapeHtml(m.text) : renderMarkdown(m.text)));
@@ -281,7 +299,7 @@ $('#remedy-filters').addEventListener('click', (e) => {
 
 /* ---------- Today ---------- */
 const dayKey = (d = new Date()) => d.toLocaleDateString('en-CA');
-const TOTAL = principles.length + 4; // eight laws + four goal actions
+const TOTAL = principles.length + 4; // nine pillars + four goal actions
 const STREAK_MIN = Math.ceil(TOTAL / 2);
 let habits = store.get('habits', {});
 const doneOn = (d) => habits[dayKey(d)] || [];
@@ -333,8 +351,9 @@ function renderToday() {
   $('#law-grid').innerHTML = principles
     .map((p) => `<button class="law ${today.includes(p.id) ? 'done' : ''} ${goal.laws.includes(p.id) ? 'key' : ''}"
         data-id="${p.id}" style="--law:${p.color}">
-        <span class="law-icon">${p.icon}</span><strong>${p.name}</strong><small>${p.goal}</small>
-        ${goal.laws.includes(p.id) ? '<em>Key for your goal</em>' : ''}</button>`)
+        <span class="law-top"><span class="law-icon">${p.icon}</span><b class="law-letter">${p.letter}</b></span>
+        <strong>${p.name}</strong><small>${p.goal}</small>
+        ${goal.laws.includes(p.id) ? '<em>★ Key for your goal</em>' : ''}</button>`)
     .join('');
 
   const dayIndex = Math.floor(Date.now() / 86400000);
@@ -381,7 +400,8 @@ renderAll();
 $('#principle-list').innerHTML = principles
   .map(
     (p) => `<article class="card law-card" style="--law:${p.color}">
-      <div class="card-head"><h3><span class="law-icon">${p.icon}</span> ${p.name}</h3></div>
+      <div class="card-head"><h3><span class="law-icon">${p.icon}</span> <b class="law-letter">${p.letter}</b> ${p.name}</h3></div>
+      <p class="why">${p.why}</p>
       <ul>${p.points.map((pt) => `<li>${pt}</li>`).join('')}</ul>
     </article>`,
   )

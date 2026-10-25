@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#1f4d36" />
-  <meta name="description" content="Natural diet, lifestyle and home remedy advice built on the eight laws of health." />
+  <meta name="description" content="Natural diet, lifestyle and home remedy advice built on the nine pillars of health." />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/icon.svg" type="image/svg+xml" />
   <title>Natural Remedy Advisor</title>
@@ -13,6 +13,7 @@
   <header class="topbar">
     <img src="/icon.svg" alt="" width="30" height="30" />
     <h1>Natural Remedy Advisor</h1>
+    <button id="open-help" class="icon-btn" aria-label="How it works">?</button>
     <button id="open-settings" class="icon-btn" aria-label="Settings">⚙️</button>
   </header>
 
@@ -21,6 +22,7 @@
       <div class="hero">
         <div class="hero-text">
           <p class="greeting" id="greeting"></p>
+          <p class="hero-sub">Your natural health plan for today</p>
           <button class="goal-pill" id="goal-pill"></button>
           <p class="streak" id="streak"></p>
         </div>
@@ -33,17 +35,21 @@
         </div>
       </div>
 
-      <div class="section-head"><h2>Today's focus</h2><span class="muted" id="focus-goal"></span></div>
+      <div class="section-head"><h2>1 · Today's focus</h2><span class="muted" id="focus-goal"></span></div>
+      <p class="section-sub">Four small actions for your goal. Tap each one when it's done.</p>
       <ul class="focus-list" id="focus-list"></ul>
       <p class="goal-note" id="goal-note" hidden></p>
 
-      <div class="section-head"><h2>Your 8 laws of health</h2><span class="muted">Tap when done</span></div>
+      <div class="section-head"><h2>2 · Your 9 pillars</h2><span class="muted">Tap when done</span></div>
+      <p class="section-sub">The daily foundations of natural health. Starred ones matter most for your goal.</p>
       <div class="law-grid" id="law-grid"></div>
 
-      <div class="section-head"><h2>Remedy of the day</h2></div>
+      <div class="section-head"><h2>3 · Remedy of the day</h2></div>
+      <p class="section-sub">A simple home remedy chosen for your goal.</p>
       <div id="remedy-of-day"></div>
 
-      <div class="section-head"><h2>Ask the advisor</h2></div>
+      <div class="section-head"><h2>4 · Ask the advisor</h2></div>
+      <p class="section-sub">Questions people with your goal often ask. Tap one to get a natural plan.</p>
       <div class="prompt-list" id="goal-prompts"></div>
 
       <div class="section-head"><h2>This week</h2><span class="muted" id="week-avg"></span></div>
@@ -71,8 +77,9 @@
     </section>
 
     <section id="tab-learn" class="tab">
-      <h2 class="page-title">The eight laws of health</h2>
-      <p class="muted">Give the body the right conditions and it does much of the healing itself.</p>
+      <h2 class="page-title">The 9 pillars of health</h2>
+      <p class="muted">The body is designed to heal itself. Remove what harms it, give it what it needs, and it does much of the healing on its own. The initials of the nine pillars spell <strong>SUSTAIN ME</strong>.</p>
+      <div class="acronym" id="acronym"></div>
       <div id="principle-list" class="cards"></div>
       <p class="disclaimer">This app gives general wellness information, not medical advice. It does not diagnose or treat disease. Always talk to a qualified health professional before changing medication or treatment, and call emergency services in an emergency.</p>
     </section>
@@ -82,19 +89,35 @@
     <button data-tab="today" class="active"><span>🏡</span>Today</button>
     <button data-tab="advisor"><span>💬</span>Advisor</button>
     <button data-tab="remedies"><span>🌿</span>Remedies</button>
-    <button data-tab="learn"><span>📖</span>Learn</button>
+    <button data-tab="learn"><span>🏛️</span>Pillars</button>
   </nav>
 
-  <dialog id="consent">
-    <div class="dialog-art">🌱</div>
-    <h2>Before you start</h2>
-    <p>Natural Remedy Advisor shares natural diet, lifestyle and home remedy information. It is <strong>not a doctor</strong> and cannot diagnose or treat illness.</p>
-    <ul>
-      <li>Never stop prescribed medication without your doctor.</li>
-      <li>In an emergency, call your local emergency number.</li>
-      <li>Check with a professional if you are pregnant, breastfeeding, on medication, or caring for a child.</li>
-    </ul>
-    <button id="consent-ok" class="primary">I understand</button>
+  <dialog id="intro">
+    <div class="slides" id="slides">
+      <section class="slide">
+        <div class="slide-art">🌱</div>
+        <h2>Heal the natural way</h2>
+        <p>Natural Remedy Advisor is your pocket coach for natural health: simple daily habits, whole foods and home remedies that help your body heal itself.</p>
+      </section>
+      <section class="slide">
+        <div class="slide-art">🏛️</div>
+        <h2>Built on 9 pillars of health</h2>
+        <p>Every plan and answer comes from nine natural foundations. Their initials spell <strong>SUSTAIN ME</strong>:</p>
+        <div class="acronym small" id="intro-acronym"></div>
+      </section>
+      <section class="slide">
+        <div class="slide-art">🧭</div>
+        <h2>How it works</h2>
+        <ol class="steps">
+          <li><strong>Pick your goal</strong>: better digestion, sleep, energy and more.</li>
+          <li><strong>Follow your plan</strong> on the Today screen and tick off what you've done.</li>
+          <li><strong>Ask the Advisor</strong> or look up a home remedy whenever you need one.</li>
+        </ol>
+        <p class="fine">This app shares natural health information. It is not a doctor and can't diagnose illness. Never stop prescribed medication without your doctor, and call emergency services in an emergency.</p>
+      </section>
+    </div>
+    <div class="dots" id="dots"><i class="on"></i><i></i><i></i></div>
+    <button id="intro-next" class="primary">Next</button>
   </dialog>
 
   <dialog id="onboard">
