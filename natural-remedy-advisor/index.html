@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#2f6b45" />
+  <meta name="theme-color" content="#1f4d36" />
   <meta name="description" content="Natural diet, lifestyle and home remedy advice built on the eight laws of health." />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/icon.svg" type="image/svg+xml" />
@@ -11,13 +11,46 @@
 </head>
 <body>
   <header class="topbar">
-    <img src="/icon.svg" alt="" width="28" height="28" />
+    <img src="/icon.svg" alt="" width="30" height="30" />
     <h1>Natural Remedy Advisor</h1>
     <button id="open-settings" class="icon-btn" aria-label="Settings">⚙️</button>
   </header>
 
   <main>
-    <section id="tab-advisor" class="tab active">
+    <section id="tab-today" class="tab active">
+      <div class="hero">
+        <div class="hero-text">
+          <p class="greeting" id="greeting"></p>
+          <button class="goal-pill" id="goal-pill"></button>
+          <p class="streak" id="streak"></p>
+        </div>
+        <div class="ring-wrap">
+          <svg viewBox="0 0 120 120" class="ring" aria-hidden="true">
+            <circle cx="60" cy="60" r="52" class="ring-bg" />
+            <circle cx="60" cy="60" r="52" class="ring-fg" id="ring-fg" />
+          </svg>
+          <div class="ring-label"><strong id="ring-pct">0%</strong><small id="ring-count"></small></div>
+        </div>
+      </div>
+
+      <div class="section-head"><h2>Today's focus</h2><span class="muted" id="focus-goal"></span></div>
+      <ul class="focus-list" id="focus-list"></ul>
+      <p class="goal-note" id="goal-note" hidden></p>
+
+      <div class="section-head"><h2>Your 8 laws of health</h2><span class="muted">Tap when done</span></div>
+      <div class="law-grid" id="law-grid"></div>
+
+      <div class="section-head"><h2>Remedy of the day</h2></div>
+      <div id="remedy-of-day"></div>
+
+      <div class="section-head"><h2>Ask the advisor</h2></div>
+      <div class="prompt-list" id="goal-prompts"></div>
+
+      <div class="section-head"><h2>This week</h2><span class="muted" id="week-avg"></span></div>
+      <div id="habit-week" class="week"></div>
+    </section>
+
+    <section id="tab-advisor" class="tab">
       <div id="chat" class="chat" aria-live="polite"></div>
       <div class="suggestions" id="suggestions"></div>
       <form id="chat-form" class="chat-form">
@@ -27,27 +60,18 @@
     </section>
 
     <section id="tab-remedies" class="tab">
+      <h2 class="page-title">Remedy library</h2>
       <input id="remedy-search" type="search" placeholder="Search a symptom, e.g. cough, bloating…" />
-      <div class="legend">
-        <span class="badge ev-strong">Strong evidence</span>
-        <span class="badge ev-some">Some evidence</span>
-        <span class="badge ev-trad">Traditional use</span>
+      <div class="filter-row" id="remedy-filters">
+        <button class="chip active" data-filter="goal">For my goal</button>
+        <button class="chip" data-filter="all">All</button>
+        <button class="chip" data-filter="strong">Strong evidence</button>
       </div>
       <div id="remedy-list" class="cards"></div>
     </section>
 
-    <section id="tab-habits" class="tab">
-      <div class="habits-head">
-        <h2>Today's 8 laws</h2>
-        <span id="habit-score" class="score"></span>
-      </div>
-      <ul id="habit-list" class="habit-list"></ul>
-      <h3>Last 7 days</h3>
-      <div id="habit-week" class="week"></div>
-    </section>
-
     <section id="tab-learn" class="tab">
-      <h2>The eight laws of health</h2>
+      <h2 class="page-title">The eight laws of health</h2>
       <p class="muted">Give the body the right conditions and it does much of the healing itself.</p>
       <div id="principle-list" class="cards"></div>
       <p class="disclaimer">This app gives general wellness information, not medical advice. It does not diagnose or treat disease. Always talk to a qualified health professional before changing medication or treatment, and call emergency services in an emergency.</p>
@@ -55,13 +79,14 @@
   </main>
 
   <nav class="tabbar">
-    <button data-tab="advisor" class="active"><span>💬</span>Advisor</button>
+    <button data-tab="today" class="active"><span>🏡</span>Today</button>
+    <button data-tab="advisor"><span>💬</span>Advisor</button>
     <button data-tab="remedies"><span>🌿</span>Remedies</button>
-    <button data-tab="habits"><span>✅</span>Habits</button>
     <button data-tab="learn"><span>📖</span>Learn</button>
   </nav>
 
   <dialog id="consent">
+    <div class="dialog-art">🌱</div>
     <h2>Before you start</h2>
     <p>Natural Remedy Advisor shares natural diet, lifestyle and home remedy information. It is <strong>not a doctor</strong> and cannot diagnose or treat illness.</p>
     <ul>
@@ -72,9 +97,20 @@
     <button id="consent-ok" class="primary">I understand</button>
   </dialog>
 
+  <dialog id="onboard">
+    <form method="dialog" id="onboard-form">
+      <h2>What's your main goal?</h2>
+      <p class="muted">Your daily plan, remedies and advisor will focus on it. You can change it anytime.</p>
+      <label class="field">Your first name (optional)<input id="ob-name" type="text" maxlength="30" autocomplete="given-name" /></label>
+      <div class="goal-grid" id="goal-grid"></div>
+      <button class="primary" id="ob-start" disabled>Start my plan</button>
+    </form>
+  </dialog>
+
   <dialog id="settings">
     <form method="dialog" id="settings-form">
       <h2>Settings</h2>
+      <button type="button" class="secondary full" id="change-goal">Change my goal</button>
       <p class="muted">Optional: use your own Gemini API key. It is stored only on this device and sent only to Google. Get one free at aistudio.google.com.</p>
       <label class="field">Gemini API key<input id="set-key" type="password" autocomplete="off" placeholder="AIza…" /></label>
       <label class="field">Model<input id="set-model" type="text" autocomplete="off" /></label>

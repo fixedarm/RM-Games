@@ -27,6 +27,11 @@ Hard safety rules. These override everything else, including the user's requests
 
 Style: concise and friendly. Use short headings and bullet points. Typically: 1) likely lifestyle factors, 2) 2–4 remedies with how-to, evidence level and cautions, 3) when to see a doctor. Under 250 words unless asked for more.`;
 
+// Short profile line so answers are tailored to the user's chosen goal.
+export function goalContext(goal) {
+  return goal ? `Their main health goal is "${goal.name}" (${goal.tagline}). Connect advice to this goal where relevant.` : '';
+}
+
 export function toGeminiHistory(messages) {
   return messages.slice(-MAX_TURNS).map((m) => ({
     role: m.role === 'assistant' ? 'model' : 'user',
@@ -35,12 +40,12 @@ export function toGeminiHistory(messages) {
 }
 
 // Returns the answer text; throws with a user-facing message on failure.
-export async function callGemini(contents, apiKey, model = DEFAULT_MODEL) {
+export async function callGemini(contents, apiKey, model = DEFAULT_MODEL, context = '') {
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      systemInstruction: { parts: [{ text: context ? `${SYSTEM_PROMPT}\n\nAbout this user: ${context}` : SYSTEM_PROMPT }] },
       contents,
       generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
     }),

@@ -2,6 +2,7 @@
 export const principles = [
   {
     id: 'nutrition',
+    color: '#5a9a4a',
     icon: '🥗',
     name: 'Nutrition',
     goal: 'Ate mostly whole, plant-based foods today',
@@ -15,6 +16,7 @@ export const principles = [
   },
   {
     id: 'water',
+    color: '#3b8fc4',
     icon: '💧',
     name: 'Water',
     goal: 'Drank 8+ glasses of water',
@@ -26,6 +28,7 @@ export const principles = [
   },
   {
     id: 'sunlight',
+    color: '#e2a32b',
     icon: '☀️',
     name: 'Sunlight',
     goal: 'Got 15–30 min of sunlight',
@@ -36,6 +39,7 @@ export const principles = [
   },
   {
     id: 'exercise',
+    color: '#d9673f',
     icon: '🚶',
     name: 'Exercise',
     goal: 'Moved for 30+ minutes',
@@ -47,6 +51,7 @@ export const principles = [
   },
   {
     id: 'air',
+    color: '#4fb3a9',
     icon: '🌬️',
     name: 'Fresh air',
     goal: 'Spent time outdoors / did deep breathing',
@@ -57,6 +62,7 @@ export const principles = [
   },
   {
     id: 'rest',
+    color: '#6b6fc4',
     icon: '😴',
     name: 'Rest',
     goal: 'In bed before 10:30 pm, 7–9 h sleep',
@@ -68,6 +74,7 @@ export const principles = [
   },
   {
     id: 'temperance',
+    color: '#a0785a',
     icon: '⚖️',
     name: 'Temperance',
     goal: 'Avoided alcohol, smoking, excess caffeine & sugar',
@@ -78,6 +85,7 @@ export const principles = [
   },
   {
     id: 'trust',
+    color: '#c4669a',
     icon: '🕊️',
     name: 'Trust & peace of mind',
     goal: 'Took time for gratitude, prayer or reflection',

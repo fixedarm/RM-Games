@@ -1,5 +1,6 @@
 import { checkRedFlags } from '../../src/data/redflags.js';
-import { DEFAULT_MODEL, toGeminiHistory, callGemini } from '../../src/advisor-core.js';
+import { DEFAULT_MODEL, toGeminiHistory, callGemini, goalContext } from '../../src/advisor-core.js';
+import { goalById } from '../../src/data/goals.js';
 
 const MODEL = process.env.GEMINI_MODEL || DEFAULT_MODEL;
 const ALLOWED = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -28,9 +29,9 @@ export default async (req) => {
   if (ALLOWED.length && origin && !ALLOWED.includes(origin)) return json({ error: 'Origin not allowed' }, 403, origin);
   if (!process.env.GEMINI_API_KEY) return json({ error: 'Server is missing GEMINI_API_KEY' }, 500, origin);
 
-  let messages;
+  let messages, goal;
   try {
-    ({ messages } = await req.json());
+    ({ messages, goal } = await req.json());
   } catch {
     return json({ error: 'Invalid JSON' }, 400, origin);
   }
@@ -43,7 +44,7 @@ export default async (req) => {
   if (flags.length) return json({ urgent: true, flags }, 200, origin);
 
   try {
-    return json({ text: await callGemini(history, process.env.GEMINI_API_KEY, MODEL) }, 200, origin);
+    return json({ text: await callGemini(history, process.env.GEMINI_API_KEY, MODEL, goalContext(goalById(goal))) }, 200, origin);
   } catch (err) {
     return json({ error: err.message }, 502, origin);
   }
