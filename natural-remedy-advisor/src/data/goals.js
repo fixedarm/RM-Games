@@ -8,12 +8,12 @@ export const goals = [
     tagline: 'Less bloating, regular and comfortable',
     laws: ['nutrition', 'water', 'abstain'],
     actions: [
-      'Warm water first thing, before breakfast',
+      'Stop drinking 30 min before meals, resume 1½–2 h after',
       'Chew every mouthful slowly, 20+ times',
       'A forkful of fermented food with lunch',
       'Last meal at least 3 hours before bed',
     ],
-    remedies: ['Peppermint', 'Ginger tea', 'Fermented foods', 'Ground flaxseed', 'Slippery elm', 'Castor oil pack'],
+    remedies: ['Bitter digestive tea', 'Slippery elm', 'Aloe vera (inner gel)', 'Peppermint', 'Ginger tea', 'Fermented foods', 'Ground flaxseed', 'Castor oil pack'],
     prompts: ['Why do I feel bloated after meals?', 'A gut-friendly day of meals', 'Natural help for constipation'],
   },
   {
@@ -25,10 +25,10 @@ export const goals = [
     actions: [
       '10 minutes of morning sunlight',
       'Brisk 15-minute walk after lunch',
-      'Swap the sugary snack for fruit and nuts',
+      'Swap one coffee for hot water with lemon (ease off gradually)',
       'In bed before 10:30 pm',
     ],
-    remedies: ['Hot and cold contrast hydrotherapy', 'Cold mitten friction', 'Lemon & warm water', 'Time-restricted eating'],
+    remedies: ['Celtic salt with water', 'Hot and cold contrast hydrotherapy', 'Protein breakfast smoothie', 'Cold mitten friction', 'Lemon & warm water'],
     prompts: ['Why am I tired every afternoon?', 'An energising breakfast plan', 'Morning routine for more energy'],
   },
   {
@@ -40,7 +40,7 @@ export const goals = [
     actions: [
       'Morning sunlight within an hour of waking',
       'Light dinner, finished by 6:30 pm',
-      'Screens off one hour before bed',
+      'Screens off at sunset, in bed by 9:30–10 pm',
       'Chamomile tea and 5 minutes of slow breathing',
     ],
     remedies: ['Chamomile tea', 'Hot foot bath'],
@@ -56,9 +56,9 @@ export const goals = [
       '20 minutes of sunlight on your skin',
       'Crushed raw garlic in one meal',
       'Vegetables at every meal',
-      'Finish your shower with 30 seconds of cold',
+      'Finish your shower with 10–30 seconds of cold',
     ],
-    remedies: ['Garlic', 'Hot and cold contrast hydrotherapy', 'Cold mitten friction', 'Honey for cough', 'Salt water gargle'],
+    remedies: ['Cold & flu home care', 'Garlic', 'Olive leaf extract', 'Hot and cold contrast hydrotherapy', 'Cold mitten friction', 'Honey for cough', 'Salt water gargle'],
     prompts: ['I feel a cold coming on', 'Immune-boosting meal ideas', 'How to recover faster from flu'],
   },
   {
@@ -73,7 +73,7 @@ export const goals = [
       '30-minute brisk walk',
       'Water instead of sweet drinks',
     ],
-    remedies: ['Time-restricted eating', 'Apple cider vinegar'],
+    remedies: ['Protein breakfast smoothie', 'Chia pudding', 'Time-restricted eating', 'Apple cider vinegar'],
     prompts: ['A simple whole-food meal plan', 'How do I stop evening snacking?', 'Best breakfast for weight loss'],
   },
   {
@@ -104,7 +104,7 @@ export const goals = [
       'Eight glasses of water',
       'Skip refined sugar and white flour today',
     ],
-    remedies: ['Turmeric with black pepper', 'Cabbage leaf compress', 'Hot and cold contrast hydrotherapy'],
+    remedies: ['Grated potato poultice', 'Turmeric with black pepper', 'Castor oil pack', 'Hot and cold contrast hydrotherapy', 'Cabbage leaf compress'],
     prompts: ['Anti-inflammatory eating plan', 'Natural help for stiff joints', 'Which foods cause inflammation?'],
   },
 ];

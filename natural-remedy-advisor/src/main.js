@@ -1,5 +1,5 @@
 import './styles.css';
-import { principles } from './data/principles.js';
+import { principles, naturalDay } from './data/principles.js';
 import { remedies, EVIDENCE } from './data/remedies.js';
 import { checkRedFlags } from './data/redflags.js';
 import { goals, goalById } from './data/goals.js';
@@ -73,6 +73,9 @@ const acronymHtml = () =>
   principles.map((p) => `<div class="acro" style="--law:${p.color}"><b>${p.letter}</b><span>${p.name}</span></div>`).join('');
 $('#intro-acronym').innerHTML = acronymHtml();
 $('#acronym').innerHTML = acronymHtml();
+$('#natural-day').innerHTML = naturalDay
+  .map((d) => `<li><span class="tl-icon">${d.icon}</span><div><strong>${d.time}</strong><p>${d.text}</p></div></li>`)
+  .join('');
 
 let slide = 0;
 function showSlide(i) {
@@ -234,6 +237,9 @@ async function askAdvisor(messages) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages, goal: profile.goal }),
   });
+  if (!res.headers.get('content-type')?.includes('application/json')) {
+    throw new Error('The advisor server is not available here. Add your Gemini API key in Settings (⚙️).');
+  }
   return res.json();
 }
 
@@ -409,5 +415,5 @@ $('#principle-list').innerHTML = principles
 
 /* ---------- PWA ---------- */
 if ('serviceWorker' in navigator && import.meta.env.PROD && location.protocol === 'https:' && !window.Capacitor) {
-  navigator.serviceWorker.register('/sw.js');
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
 }

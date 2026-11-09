@@ -21,7 +21,7 @@
   --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #121612;
     --surface: #1b211b;
     --surface-2: #232b23;
@@ -40,7 +40,29 @@
     --danger-bg: #3a1f1f;
     --danger: #ff8a80;
     --shadow: 0 1px 2px rgb(0 0 0 / .3);
+    color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+    --bg: #121612;
+    --surface: #1b211b;
+    --surface-2: #232b23;
+    --text: #e8ece3;
+    --muted: #9da795;
+    --line: #2d362c;
+    --forest: #163826;
+    --forest-2: #24543a;
+    --brand: #6fbf88;
+    --brand-soft: #22342a;
+    --accent: #ec8d69;
+    --strong: #6fd093;
+    --some: #e0b44c;
+    --trad: #b4a3dc;
+    --warn-bg: #2e2617;
+    --danger-bg: #3a1f1f;
+    --danger: #ff8a80;
+    --shadow: 0 1px 2px rgb(0 0 0 / .3);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -261,3 +283,12 @@ dialog h2 { font-size: 1.4rem; margin-bottom: 6px; }
 .law.done .law-letter { visibility: hidden; }
 .law-card .law-letter { vertical-align: middle; margin-right: 4px; }
 .why { font-style: italic; color: var(--muted); }
+
+/* ---------- Natural day ---------- */
+.day-title { font-size: 1.15rem; margin: 22px 0 10px; }
+.timeline { list-style: none; margin: 0 0 22px; padding: 0 0 0 4px; position: relative; display: grid; gap: 12px; }
+.timeline::before { content: ''; position: absolute; left: 21px; top: 8px; bottom: 8px; width: 2px; background: var(--line); }
+.timeline li { display: flex; gap: 12px; align-items: flex-start; position: relative; }
+.tl-icon { flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.timeline strong { font-size: .88rem; color: var(--brand); }
+.timeline p { margin: 2px 0 0; font-size: .9rem; }
