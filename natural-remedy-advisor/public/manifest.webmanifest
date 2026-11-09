@@ -3,8 +3,8 @@
   "short_name": "Remedy Advisor",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f7f2e8",
-  "theme_color": "#1f4d36",
+  "background_color": "#eef3ee",
+  "theme_color": "#0f2a22",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]

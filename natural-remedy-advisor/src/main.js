@@ -10,6 +10,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || '';
 const HAS_SERVER = Boolean(API_BASE) || !window.Capacitor?.isNativePlatform?.();
 const API_URL = `${API_BASE}/api/advisor`;
 const $ = (sel) => document.querySelector(sel);
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const store = {
   get(key, fallback) {
@@ -56,26 +57,33 @@ function renderMarkdown(md) {
   return html;
 }
 
+const buzz = (ms = 12) => navigator.vibrate?.(ms);
+
+let toastTimer;
+function toast(text) {
+  const el = $('#toast');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
 /* ---------- Tabs ---------- */
 function showTab(name) {
-  document.querySelectorAll('.tabbar button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.dock button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.id === `tab-${name}`));
   store.set('tab', name);
 }
-document.querySelectorAll('.tabbar button').forEach((btn) => btn.addEventListener('click', () => showTab(btn.dataset.tab)));
+document.querySelectorAll('.dock button').forEach((btn) => btn.addEventListener('click', () => showTab(btn.dataset.tab)));
 showTab(store.get('tab', 'today'));
 
 let profile = store.get('profile', {});
 const currentGoal = () => goalById(profile.goal) || goals[0];
 
 /* ---------- Intro ---------- */
-const acronymHtml = () =>
-  principles.map((p) => `<div class="acro" style="--law:${p.color}"><b>${p.letter}</b><span>${p.name}</span></div>`).join('');
-$('#intro-acronym').innerHTML = acronymHtml();
-$('#acronym').innerHTML = acronymHtml();
-$('#natural-day').innerHTML = naturalDay
-  .map((d) => `<li><span class="tl-icon">${d.icon}</span><div><strong>${d.time}</strong><p>${d.text}</p></div></li>`)
-  .join('');
+const lettersHtml = () =>
+  principles.map((p) => `<button class="letter" data-id="${p.id}" style="--c:${p.color}" title="${p.name}">${p.letter}</button>`).join('');
+$('#intro-letters').innerHTML = lettersHtml();
 
 let slide = 0;
 function showSlide(i) {
@@ -119,6 +127,7 @@ $('#goal-grid').addEventListener('click', (e) => {
   pickedGoal = opt.dataset.goal;
   document.querySelectorAll('.goal-opt').forEach((o) => o.classList.toggle('picked', o === opt));
   $('#ob-start').disabled = false;
+  buzz();
 });
 $('#onboard').addEventListener('cancel', (e) => {
   if (!profile.goal) e.preventDefault();
@@ -130,11 +139,260 @@ $('#onboard-form').addEventListener('submit', () => {
 });
 $('#goal-pill').addEventListener('click', openOnboarding);
 
+/* ---------- Sky: follows the real sun ---------- */
+const hourNow = () => {
+  const d = new Date();
+  return d.getHours() + d.getMinutes() / 60;
+};
+function phaseOf(h) {
+  if (h >= 5 && h < 8) return { id: 'dawn', label: 'Dawn', greet: 'Good morning' };
+  if (h >= 8 && h < 17) return { id: 'day', label: h < 12 ? 'Morning' : 'Afternoon', greet: h < 12 ? 'Good morning' : 'Good afternoon' };
+  if (h >= 17 && h < 20) return { id: 'dusk', label: 'Dusk', greet: 'Good evening' };
+  return { id: 'night', label: 'Night', greet: h < 5 ? 'Rest well' : 'Good evening' };
+}
+
+function drawStars() {
+  const c = $('#sky-stars');
+  const r = c.getBoundingClientRect();
+  c.width = r.width * devicePixelRatio;
+  c.height = r.height * devicePixelRatio;
+  const ctx = c.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  let seed = 7;
+  const rand = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+  for (let i = 0; i < 70; i++) {
+    ctx.globalAlpha = 0.3 + rand() * 0.7;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(rand() * r.width, rand() * r.height * 0.75, rand() * 1.3 + 0.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function renderSky() {
+  const h = hourNow();
+  const ph = phaseOf(h);
+  const sky = $('#sky');
+  sky.className = `sky ${ph.id}`;
+  $('#phase').textContent = `${ph.label} · ${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+  $('#greeting').textContent = profile.name ? `${ph.greet}, ${profile.name}` : ph.greet;
+
+  // Sun travels 6:00→18:00 along the arc; the moon takes the night shift.
+  const isDay = h >= 6 && h < 18;
+  const t = isDay ? (h - 6) / 12 : ((h + 24 - 18) % 24) / 12;
+  const bx = (1 - t) ** 2 * 20 + 2 * (1 - t) * t * 200 + t ** 2 * 380;
+  const by = (1 - t) ** 2 * 140 + 2 * (1 - t) * t * 20 + t ** 2 * 140;
+  const rect = sky.getBoundingClientRect();
+  const arcTop = rect.height - 18 - 150;
+  const sun = $('#sun');
+  sun.classList.toggle('moon', !isDay);
+  sun.style.left = `${(bx / 400) * 100}%`;
+  sun.style.top = `${arcTop + by}px`;
+}
+
+/* ---------- Right now ---------- */
+function nowIndex(h) {
+  let idx = naturalDay.length - 1;
+  naturalDay.forEach((d, i) => {
+    if (h >= d.from) idx = i;
+  });
+  return h < naturalDay[0].from ? naturalDay.length - 1 : idx;
+}
+function renderNow() {
+  const i = nowIndex(hourNow());
+  const d = naturalDay[i];
+  const next = naturalDay[(i + 1) % naturalDay.length];
+  $('#now-card').innerHTML = `<span class="now-ico">${d.icon}</span>
+    <span class="now-label">Right now</span>
+    <span class="now-title">${d.time}</span>
+    <p class="now-text">${d.text}</p>
+    <span class="now-next">Next · <strong>${next.time}</strong>: ${next.text.split('.')[0]}.</span>`;
+}
+
+/* ---------- Habits store ---------- */
+const dayKey = (d = new Date()) => d.toLocaleDateString('en-CA');
+const FOCUS_COUNT = 4;
+const TOTAL = principles.length + FOCUS_COUNT;
+const STREAK_MIN = Math.ceil(TOTAL / 2);
+let habits = store.get('habits', {});
+const doneOn = (d) => habits[dayKey(d)] || [];
+function daysAgo(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d;
+}
+function streak() {
+  let n = 0;
+  let i = doneOn(daysAgo(0)).length >= STREAK_MIN ? 0 : 1; // today still counts as in progress
+  while (doneOn(daysAgo(i)).length >= STREAK_MIN) n++, i++;
+  return n;
+}
+const pillarsOpen = (list) => principles.filter((p) => list.includes(p.id)).length;
+
+function toggleDone(id) {
+  const key = dayKey();
+  const set = new Set(habits[key] || []);
+  const before = pillarsOpen([...set]);
+  const adding = !set.has(id);
+  adding ? set.add(id) : set.delete(id);
+  habits[key] = [...set];
+  store.set('habits', habits);
+  buzz(adding ? 14 : 6);
+  const p = principles.find((x) => x.id === id);
+  if (adding && p) toast(`${p.letter} · ${p.name} bloomed`);
+  if (adding && !p) toast('Ritual planted 🌱');
+  renderToday();
+  if (adding && before < principles.length && pillarsOpen([...set]) === principles.length) {
+    toast('Full bloom! All nine pillars today ✿');
+    petalRain();
+  }
+}
+
+/* ---------- Bloom ---------- */
+const PETAL = 'M0,-34 C30,-52 44,-112 0,-150 C-44,-112 -30,-52 0,-34 Z';
+function buildBloom() {
+  const step = 360 / principles.length;
+  $('#bloom').innerHTML = principles
+    .map((p, i) => {
+      const a = i * step;
+      return `<g transform="rotate(${a})"><g class="petal" data-id="${p.id}" style="--c:${p.color}" tabindex="0" role="button" aria-label="${p.name}">
+        <path d="${PETAL}" /><text x="0" y="-104" transform="rotate(${-a} 0 -104)">${p.letter}</text></g></g>`;
+    })
+    .join('');
+}
+buildBloom();
+function bloomClick(e) {
+  const petal = e.target.closest('.petal');
+  if (petal) toggleDone(petal.dataset.id);
+}
+$('#bloom').addEventListener('click', bloomClick);
+$('#bloom').addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.closest('.petal')) {
+    e.preventDefault();
+    bloomClick(e);
+  }
+});
+
+/* ---------- Petal rain ---------- */
+function petalRain() {
+  if (reduceMotion) return;
+  const c = $('#petal-rain');
+  c.width = innerWidth * devicePixelRatio;
+  c.height = innerHeight * devicePixelRatio;
+  const ctx = c.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  const colors = principles.map((p) => p.color);
+  const bits = Array.from({ length: 90 }, () => ({
+    x: Math.random() * innerWidth,
+    y: -20 - Math.random() * innerHeight * 0.6,
+    r: 5 + Math.random() * 6,
+    vy: 1.4 + Math.random() * 2.2,
+    sway: Math.random() * Math.PI * 2,
+    rot: Math.random() * Math.PI,
+    c: colors[Math.floor(Math.random() * colors.length)],
+  }));
+  const start = performance.now();
+  (function frame(now) {
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    bits.forEach((b) => {
+      b.y += b.vy;
+      b.sway += 0.04;
+      b.rot += 0.03;
+      ctx.save();
+      ctx.translate(b.x + Math.sin(b.sway) * 18, b.y);
+      ctx.rotate(b.rot);
+      ctx.fillStyle = b.c;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, b.r, b.r * 0.55, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+    if (now - start < 3800) requestAnimationFrame(frame);
+    else ctx.clearRect(0, 0, innerWidth, innerHeight);
+  })(start);
+  buzz([20, 40, 20]);
+}
+
+/* ---------- Garden ---------- */
+function plantSvg(n, animate) {
+  const g = animate ? ' class="grow"' : '';
+  if (n === 0) return '<svg viewBox="0 0 40 46"><ellipse cx="20" cy="44" rx="7" ry="2" fill="#8a6a43" opacity=".5"/></svg>';
+  if (n < 5) return `<svg viewBox="0 0 40 46"><g${g}><path d="M20 46 V34" stroke="#3fa66a" stroke-width="2.5" fill="none"/><path d="M20 36 C14 34 12 28 14 26 C18 27 20 31 20 36Z M20 36 C26 34 28 28 26 26 C22 27 20 31 20 36Z" fill="#5cc286"/></g></svg>`;
+  if (n < 9) return `<svg viewBox="0 0 40 46"><g${g}><path d="M20 46 V20" stroke="#2e8a57" stroke-width="3" fill="none"/><path d="M20 34 C10 32 6 24 9 20 C15 22 19 27 20 34Z M20 28 C30 26 34 18 31 14 C25 16 21 21 20 28Z" fill="#3fa66a"/><circle cx="20" cy="18" r="3.5" fill="#5cc286"/></g></svg>`;
+  if (n < TOTAL) return `<svg viewBox="0 0 40 46"><g${g}><path d="M20 46 V16" stroke="#2e8a57" stroke-width="3" fill="none"/><path d="M20 36 C10 34 6 26 9 22 C15 24 19 29 20 36Z M20 30 C30 28 34 20 31 16 C25 18 21 23 20 30Z" fill="#3fa66a"/><path d="M20 4 C27 8 27 16 20 18 C13 16 13 8 20 4Z" fill="#c4669a"/></g></svg>`;
+  const petals = principles
+    .map((p, i) => `<ellipse cx="20" cy="5" rx="3.2" ry="6" fill="${p.color}" transform="rotate(${i * 40} 20 12)"/>`)
+    .join('');
+  return `<svg viewBox="0 0 40 46"><g${g}><path d="M20 46 V18" stroke="#2e8a57" stroke-width="3" fill="none"/><path d="M20 38 C10 36 6 28 9 24 C15 26 19 31 20 38Z" fill="#3fa66a"/>${petals}<circle cx="20" cy="12" r="4" fill="#f2b84b"/></g></svg>`;
+}
+let lastGardenToday = -1;
+function renderGarden() {
+  const days = [...Array(14)].map((_, i) => daysAgo(13 - i));
+  const todayN = doneOn().length;
+  $('#garden').innerHTML = days
+    .map((d, i) => {
+      const n = doneOn(d).length;
+      const isToday = i === 13;
+      return `<div class="plot ${isToday ? 'today' : ''}">${plantSvg(n, isToday && todayN !== lastGardenToday)}<small>${isToday ? 'Today' : d.toLocaleDateString(undefined, { weekday: 'narrow' })}</small></div>`;
+    })
+    .join('');
+  lastGardenToday = todayN;
+  const s = streak();
+  $('#garden-sub').textContent = s
+    ? `🔥 ${s}-day streak. Each plant grows with what you complete that day.`
+    : `Complete ${STREAK_MIN} of ${TOTAL} today to start a streak. Each plant grows with what you complete.`;
+}
+
+/* ---------- Today ---------- */
+function renderToday() {
+  const goal = currentGoal();
+  const today = doneOn();
+  const open = pillarsOpen(today);
+
+  $('#goal-pill').innerHTML = `${goal.icon} ${goal.name}<small>change</small>`;
+
+  document.querySelectorAll('.petal').forEach((el) => {
+    el.classList.toggle('open', today.includes(el.dataset.id));
+    el.classList.toggle('key', goal.laws.includes(el.dataset.id));
+  });
+  const core = $('#bloom-core');
+  core.innerHTML = `<div><strong>${open}/9</strong><small>${open === 9 ? 'Full bloom' : 'pillars'}</small></div>`;
+  core.classList.toggle('full', open === 9);
+
+  $('#pillar-strip').innerHTML = principles
+    .map((p) => `<button class="p-chip ${today.includes(p.id) ? 'open' : ''}" data-id="${p.id}" style="--c:${p.color}" title="${p.goal}">
+      <b>${p.letter}</b><span>${p.name}${goal.laws.includes(p.id) ? ' ★' : ''}</span></button>`)
+    .join('');
+
+  $('#focus-sub').textContent = `Four small acts for ${goal.name.toLowerCase()}. Tap to plant each one.`;
+  $('#focus-list').innerHTML = goal.actions
+    .map((a, i) => {
+      const id = `f${i}`;
+      return `<li><button class="ritual ${today.includes(id) ? 'done' : ''}" data-id="${id}"><span class="seed"></span><span>${a}</span></button></li>`;
+    })
+    .join('');
+  $('#goal-note').hidden = !goal.note;
+  $('#goal-note').textContent = goal.note ? `⚠️ ${goal.note}` : '';
+
+  const dayIndex = Math.floor(Date.now() / 86400000);
+  const featured = remedies.find((r) => r.name === goal.remedies[dayIndex % goal.remedies.length]);
+  $('#remedy-of-day').innerHTML = featured ? remedyCard(featured, true) : '';
+
+  $('#goal-prompts').innerHTML = goal.prompts.map((p) => `<button class="prompt" data-q="${escapeHtml(p)}"><em>Ask</em>${p}</button>`).join('');
+
+  renderGarden();
+}
+$('#pillar-strip').addEventListener('click', (e) => e.target.closest('.p-chip') && toggleDone(e.target.closest('.p-chip').dataset.id));
+$('#focus-list').addEventListener('click', (e) => e.target.closest('.ritual') && toggleDone(e.target.closest('.ritual').dataset.id));
+$('#goal-prompts').addEventListener('click', (e) => {
+  const btn = e.target.closest('.prompt');
+  if (btn) ask(btn.dataset.q);
+});
+
 /* ---------- Advisor chat ---------- */
 const chatEl = $('#chat');
 const input = $('#chat-input');
 let history = store.get('chat', []);
-
 
 function addBubble(role, html) {
   const div = document.createElement('div');
@@ -221,7 +479,7 @@ $('#chat-form').addEventListener('submit', async (e) => {
     store.set('chat', history);
     renderChat();
   } catch (err) {
-    pending.innerHTML = `<span class="error">${escapeHtml(navigator.onLine ? err.message : 'You are offline. The remedy library and habit tracker still work.')}</span>`;
+    pending.innerHTML = `<span class="error">${escapeHtml(navigator.onLine ? err.message : 'You are offline. The remedy library and Today screen still work.')}</span>`;
     history.pop();
   } finally {
     form.classList.remove('busy');
@@ -231,19 +489,17 @@ $('#chat-form').addEventListener('submit', async (e) => {
 async function askAdvisor(messages) {
   const { key, model } = store.get('settings', {});
   if (key) return { text: await callGemini(toGeminiHistory(messages), key, model || DEFAULT_MODEL, goalContext(goalById(profile.goal))) };
-  if (!HAS_SERVER) throw new Error('Add your Gemini API key in Settings (⚙️) to use the advisor.');
+  if (!HAS_SERVER) throw new Error('Add your Gemini API key in Settings (⚙︎) to use the advisor.');
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages, goal: profile.goal }),
   });
   if (!res.headers.get('content-type')?.includes('application/json')) {
-    throw new Error('The advisor server is not available here. Add your Gemini API key in Settings (⚙️).');
+    throw new Error('The advisor server is not available here. Add your Gemini API key in Settings (⚙︎).');
   }
   return res.json();
 }
-
-renderChat();
 
 /* ---------- Settings ---------- */
 function openSettings() {
@@ -252,7 +508,7 @@ function openSettings() {
   $('#set-model').value = model || DEFAULT_MODEL;
   $('#settings-mode').textContent = key
     ? 'Using your personal key.'
-    : HAS_SERVER ? 'Using the app server.' : 'No key set: the advisor is off. The other tabs work offline.';
+    : HAS_SERVER ? 'Using the app server.' : 'No key set: the advisor is off. Everything else works offline.';
   $('#settings').showModal();
 }
 $('#open-settings').addEventListener('click', openSettings);
@@ -262,17 +518,20 @@ $('#change-goal').addEventListener('click', () => {
 });
 $('#settings-form').addEventListener('submit', () => {
   store.set('settings', { key: $('#set-key').value.trim(), model: $('#set-model').value.trim() || DEFAULT_MODEL });
+  toast('Settings saved');
 });
 $('#settings-clear').addEventListener('click', () => {
   store.set('settings', {});
   $('#settings').close();
+  toast('Key removed');
 });
 
 /* ---------- Remedy library ---------- */
 function remedyCard(r, featured = false) {
   const ev = EVIDENCE[r.evidence];
-  return `<article class="card remedy ${featured ? 'featured' : ''}">
-    <div class="card-head"><h3>${r.name}</h3><span class="badge ${ev.cls}">${ev.label}</span></div>
+  return `<article class="remedy ${featured ? 'featured' : ''}">
+    <div class="remedy-head"><h3>${r.name}</h3>
+      <span class="meter ${ev.cls}" title="${ev.label}"><span><i></i><i></i><i></i></span><small>${ev.label}</small></span></div>
     <p class="tags">${r.for.map((f) => `<span>${f}</span>`).join('')}</p>
     <p><strong>How:</strong> ${r.how}</p>
     <p class="caution">⚠️ ${r.caution}</p>
@@ -303,115 +562,51 @@ $('#remedy-filters').addEventListener('click', (e) => {
   renderRemedies();
 });
 
-/* ---------- Today ---------- */
-const dayKey = (d = new Date()) => d.toLocaleDateString('en-CA');
-const TOTAL = principles.length + 4; // nine pillars + four goal actions
-const STREAK_MIN = Math.ceil(TOTAL / 2);
-let habits = store.get('habits', {});
-const doneOn = (d) => habits[dayKey(d)] || [];
-
-function daysAgo(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d;
-}
-
-function streak() {
-  let n = 0;
-  let i = doneOn(daysAgo(0)).length >= STREAK_MIN ? 0 : 1; // today still counts as in progress
-  while (doneOn(daysAgo(i)).length >= STREAK_MIN) n++, i++;
-  return n;
-}
-
-function greeting() {
-  const h = new Date().getHours();
-  const part = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
-  return profile.name ? `${part}, ${escapeHtml(profile.name)}` : part;
-}
-
-function renderToday() {
-  const goal = currentGoal();
-  const today = doneOn();
-  const pct = Math.round((today.length / TOTAL) * 100);
-  const circ = 2 * Math.PI * 52;
-
-  $('#greeting').innerHTML = greeting();
-  $('#goal-pill').innerHTML = `${goal.icon} ${goal.name} <span>change</span>`;
-  const s = streak();
-  $('#streak').textContent = s ? `🔥 ${s}-day streak` : `Do ${STREAK_MIN} of ${TOTAL} today to start a streak`;
-  $('#ring-fg').style.strokeDasharray = `${(pct / 100) * circ} ${circ}`;
-  $('#ring-pct').textContent = `${pct}%`;
-  $('#ring-count').textContent = `${today.length} of ${TOTAL}`;
-
-  $('#focus-goal').textContent = goal.name;
-  $('#focus-list').innerHTML = goal.actions
-    .map((a, i) => {
-      const id = `f${i}`;
-      return `<li><button class="focus-item ${today.includes(id) ? 'done' : ''}" data-id="${id}">
-        <span class="check"></span><span>${a}</span></button></li>`;
-    })
-    .join('');
-  $('#goal-note').hidden = !goal.note;
-  $('#goal-note').textContent = goal.note ? `⚠️ ${goal.note}` : '';
-
-  $('#law-grid').innerHTML = principles
-    .map((p) => `<button class="law ${today.includes(p.id) ? 'done' : ''} ${goal.laws.includes(p.id) ? 'key' : ''}"
-        data-id="${p.id}" style="--law:${p.color}">
-        <span class="law-top"><span class="law-icon">${p.icon}</span><b class="law-letter">${p.letter}</b></span>
-        <strong>${p.name}</strong><small>${p.goal}</small>
-        ${goal.laws.includes(p.id) ? '<em>★ Key for your goal</em>' : ''}</button>`)
-    .join('');
-
-  const dayIndex = Math.floor(Date.now() / 86400000);
-  const featured = remedies.find((r) => r.name === goal.remedies[dayIndex % goal.remedies.length]);
-  $('#remedy-of-day').innerHTML = featured ? remedyCard(featured, true) : '';
-
-  $('#goal-prompts').innerHTML = goal.prompts.map((p) => `<button class="prompt">💬 ${p}<span>›</span></button>`).join('');
-
-  const week = [...Array(7)].map((_, i) => daysAgo(6 - i));
-  $('#habit-week').innerHTML = week
-    .map((d, i) => {
-      const n = doneOn(d).length;
-      return `<div class="day ${i === 6 ? 'is-today' : ''}"><div class="bar"><div style="height:${Math.round((n / TOTAL) * 100)}%"></div></div>
-        <small>${d.toLocaleDateString(undefined, { weekday: 'narrow' })}</small></div>`;
-    })
-    .join('');
-  const avg = week.reduce((sum, d) => sum + doneOn(d).length, 0) / 7;
-  $('#week-avg').textContent = `avg ${Math.round((avg / TOTAL) * 100)}%`;
-}
-
-function toggleDone(id) {
-  const key = dayKey();
-  const set = new Set(habits[key] || []);
-  set.has(id) ? set.delete(id) : set.add(id);
-  habits[key] = [...set];
-  store.set('habits', habits);
-  renderToday();
-}
-$('#focus-list').addEventListener('click', (e) => e.target.closest('.focus-item') && toggleDone(e.target.closest('.focus-item').dataset.id));
-$('#law-grid').addEventListener('click', (e) => e.target.closest('.law') && toggleDone(e.target.closest('.law').dataset.id));
-$('#goal-prompts').addEventListener('click', (e) => {
-  const btn = e.target.closest('.prompt');
-  if (btn) ask(btn.firstChild.textContent.replace('💬 ', ''));
+/* ---------- Pillars ---------- */
+$('#letters').innerHTML = lettersHtml();
+$('#principle-list').innerHTML = principles
+  .map((p) => `<details class="pillar" id="pillar-${p.id}" style="--c:${p.color}">
+    <summary><b>${p.letter}</b><div><strong>${p.icon} ${p.name}</strong><small>${p.goal}</small></div></summary>
+    <p class="why">${p.why}</p>
+    <ul>${p.points.map((pt) => `<li>${pt}</li>`).join('')}</ul>
+  </details>`)
+  .join('');
+$('#letters').addEventListener('click', (e) => {
+  const l = e.target.closest('.letter');
+  if (!l) return;
+  const d = $(`#pillar-${l.dataset.id}`);
+  d.open = true;
+  d.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+  buzz();
 });
+function renderTimeline() {
+  const now = nowIndex(hourNow());
+  $('#natural-day').innerHTML = naturalDay
+    .map((d, i) => `<li class="${i === now ? 'now' : ''}"><span class="tl-icon">${d.icon}</span><div><strong>${d.time}</strong><p>${d.text}</p></div></li>`)
+    .join('');
+}
 
+/* ---------- Boot ---------- */
 function renderAll() {
+  renderSky();
+  renderNow();
   renderToday();
   renderRemedies();
+  renderTimeline();
   if (!history.length) renderChat();
 }
+renderChat();
 renderAll();
-
-/* ---------- Learn ---------- */
-$('#principle-list').innerHTML = principles
-  .map(
-    (p) => `<article class="card law-card" style="--law:${p.color}">
-      <div class="card-head"><h3><span class="law-icon">${p.icon}</span> <b class="law-letter">${p.letter}</b> ${p.name}</h3></div>
-      <p class="why">${p.why}</p>
-      <ul>${p.points.map((pt) => `<li>${pt}</li>`).join('')}</ul>
-    </article>`,
-  )
-  .join('');
+drawStars();
+addEventListener('resize', () => {
+  drawStars();
+  renderSky();
+});
+setInterval(() => {
+  renderSky();
+  renderNow();
+  renderTimeline();
+}, 60000);
 
 /* ---------- PWA ---------- */
 if ('serviceWorker' in navigator && import.meta.env.PROD && location.protocol === 'https:' && !window.Capacitor) {

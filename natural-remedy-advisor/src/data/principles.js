@@ -153,14 +153,14 @@ export const principles = [
 
 // A day lived by the nine pillars.
 export const naturalDay = [
-  { time: 'On waking', icon: '💧', text: 'Glass by the bed. Sip 3–4 half-glasses of water before breakfast, a crystal of sea salt with the first.' },
-  { time: 'First light', icon: '☀️', text: 'Outside in the first hour of daylight. Prayer or gratitude.' },
-  { time: 'Early morning', icon: '🚶', text: 'Walk with fast uphill bursts, stretch once warm, finish with a cold dip or cold shower.' },
-  { time: 'Breakfast', icon: '🥑', text: 'The biggest meal: fruit with chia, a few almonds and Brazil nuts, sourdough spelt with olive oil, avocado and lentils.' },
-  { time: 'Mid-morning', icon: '💧', text: 'Water between meals. Stop 30 minutes before lunch.' },
-  { time: 'Lunch', icon: '🥗', text: 'Big salad, cooked vegetables, a legume dish. Healthy fats.' },
-  { time: 'Afternoon', icon: '💧', text: 'Start drinking again 1½–2 hours after lunch. Fresh air, work, rest.' },
-  { time: 'Evening', icon: '🍲', text: 'Light or nothing: vegetable soup, a smoothie or an avocado.' },
-  { time: 'Sunset', icon: '📵', text: 'Screens off, soft lights, a warm shower.' },
-  { time: '9–10 pm', icon: '🌙', text: 'In bed, in the dark. At least 2 hours of sleep before midnight.' },
+  { time: 'On waking', from: 5, icon: '💧', text: 'Glass by the bed. Sip 3–4 half-glasses of water before breakfast, a crystal of sea salt with the first.' },
+  { time: 'First light', from: 6, icon: '☀️', text: 'Outside in the first hour of daylight. Prayer or gratitude.' },
+  { time: 'Early morning', from: 6.5, icon: '🚶', text: 'Walk with fast uphill bursts, stretch once warm, finish with a cold dip or cold shower.' },
+  { time: 'Breakfast', from: 7.5, icon: '🥑', text: 'The biggest meal: fruit with chia, a few almonds and Brazil nuts, sourdough spelt with olive oil, avocado and lentils.' },
+  { time: 'Mid-morning', from: 9.5, icon: '💧', text: 'Water between meals. Stop 30 minutes before lunch.' },
+  { time: 'Lunch', from: 12, icon: '🥗', text: 'Big salad, cooked vegetables, a legume dish. Healthy fats.' },
+  { time: 'Afternoon', from: 14, icon: '💧', text: 'Start drinking again 1½–2 hours after lunch. Fresh air, work, rest.' },
+  { time: 'Evening', from: 17, icon: '🍲', text: 'Light or nothing: vegetable soup, a smoothie or an avocado.' },
+  { time: 'Sunset', from: 19, icon: '📵', text: 'Screens off, soft lights, a warm shower.' },
+  { time: '9–10 pm', from: 21, icon: '🌙', text: 'In bed, in the dark. At least 2 hours of sleep before midnight.' },
 ];

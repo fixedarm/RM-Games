@@ -3,71 +3,101 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#1f4d36" />
+  <meta name="theme-color" content="#0f2a22" />
   <meta name="description" content="Natural diet, lifestyle and home remedy advice built on the nine pillars of health." />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="icon" href="/icon.svg" type="image/svg+xml" />
   <title>Natural Remedy Advisor</title>
 </head>
 <body>
-  <header class="topbar">
-    <img src="/icon.svg" alt="" width="30" height="30" />
-    <h1>Natural Remedy Advisor</h1>
-    <button id="open-help" class="icon-btn" aria-label="How it works">?</button>
-    <button id="open-settings" class="icon-btn" aria-label="Settings">⚙️</button>
-  </header>
-
-  <main>
+  <main id="app">
+    <!-- ============ TODAY ============ -->
     <section id="tab-today" class="tab active">
-      <div class="hero">
-        <div class="hero-text">
-          <p class="greeting" id="greeting"></p>
-          <p class="hero-sub">Your natural health plan for today</p>
+      <header class="sky" id="sky">
+        <canvas class="sky-stars" id="sky-stars" aria-hidden="true"></canvas>
+        <svg class="sky-arc" viewBox="0 0 400 150" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M20 140 Q200 20 380 140" class="arc-path" />
+        </svg>
+        <div class="sun" id="sun" aria-hidden="true"></div>
+        <div class="sky-top">
+          <span class="brand"><img src="/icon.svg" alt="" width="26" height="26" />Natural Remedy Advisor</span>
+          <span class="sky-actions">
+            <button id="open-help" class="glass-btn" aria-label="How it works">?</button>
+            <button id="open-settings" class="glass-btn" aria-label="Settings">⚙︎</button>
+          </span>
+        </div>
+        <div class="sky-body">
+          <p class="phase" id="phase"></p>
+          <h1 class="greeting" id="greeting"></h1>
           <button class="goal-pill" id="goal-pill"></button>
-          <p class="streak" id="streak"></p>
         </div>
-        <div class="ring-wrap">
-          <svg viewBox="0 0 120 120" class="ring" aria-hidden="true">
-            <circle cx="60" cy="60" r="52" class="ring-bg" />
-            <circle cx="60" cy="60" r="52" class="ring-fg" id="ring-fg" />
-          </svg>
-          <div class="ring-label"><strong id="ring-pct">0%</strong><small id="ring-count"></small></div>
-        </div>
+      </header>
+
+      <div class="sheet">
+        <article class="now-card" id="now-card" aria-live="polite"></article>
+
+        <section class="bloom-block">
+          <div class="block-head">
+            <h2>Your bloom</h2>
+            <p>Each pillar you live today opens a petal. Tap a petal or a pillar below.</p>
+          </div>
+          <div class="bloom-wrap">
+            <svg class="bloom" id="bloom" viewBox="-160 -160 320 320" role="group" aria-label="Nine pillars flower"></svg>
+            <div class="bloom-core" id="bloom-core"></div>
+          </div>
+          <div class="pillar-strip" id="pillar-strip"></div>
+        </section>
+
+        <section>
+          <div class="block-head">
+            <h2>Today's rituals</h2>
+            <p id="focus-sub"></p>
+          </div>
+          <ul class="rituals" id="focus-list"></ul>
+          <p class="goal-note" id="goal-note" hidden></p>
+        </section>
+
+        <section>
+          <div class="block-head"><h2>Remedy of the day</h2><p>Chosen for your goal.</p></div>
+          <div id="remedy-of-day"></div>
+        </section>
+
+        <section>
+          <div class="block-head"><h2>Ask the advisor</h2><p>Tap a question to get a natural plan.</p></div>
+          <div class="prompt-list" id="goal-prompts"></div>
+        </section>
+
+        <section>
+          <div class="block-head">
+            <h2>Your garden</h2>
+            <p id="garden-sub"></p>
+          </div>
+          <div class="garden" id="garden"></div>
+        </section>
       </div>
-
-      <div class="section-head"><h2>1 · Today's focus</h2><span class="muted" id="focus-goal"></span></div>
-      <p class="section-sub">Four small actions for your goal. Tap each one when it's done.</p>
-      <ul class="focus-list" id="focus-list"></ul>
-      <p class="goal-note" id="goal-note" hidden></p>
-
-      <div class="section-head"><h2>2 · Your 9 pillars</h2><span class="muted">Tap when done</span></div>
-      <p class="section-sub">The daily foundations of natural health. Starred ones matter most for your goal.</p>
-      <div class="law-grid" id="law-grid"></div>
-
-      <div class="section-head"><h2>3 · Remedy of the day</h2></div>
-      <p class="section-sub">A simple home remedy chosen for your goal.</p>
-      <div id="remedy-of-day"></div>
-
-      <div class="section-head"><h2>4 · Ask the advisor</h2></div>
-      <p class="section-sub">Questions people with your goal often ask. Tap one to get a natural plan.</p>
-      <div class="prompt-list" id="goal-prompts"></div>
-
-      <div class="section-head"><h2>This week</h2><span class="muted" id="week-avg"></span></div>
-      <div id="habit-week" class="week"></div>
     </section>
 
+    <!-- ============ ADVISOR ============ -->
     <section id="tab-advisor" class="tab">
+      <header class="page-head">
+        <h1>Advisor</h1>
+        <p>Ask about a symptom, a food or a habit.</p>
+      </header>
       <div id="chat" class="chat" aria-live="polite"></div>
       <div class="suggestions" id="suggestions"></div>
       <form id="chat-form" class="chat-form">
         <textarea id="chat-input" rows="1" placeholder="Ask about a symptom or food…" maxlength="2000" required></textarea>
-        <button type="submit" aria-label="Send">➤</button>
+        <button type="submit" aria-label="Send">↑</button>
       </form>
     </section>
 
+    <!-- ============ REMEDIES ============ -->
     <section id="tab-remedies" class="tab">
-      <h2 class="page-title">Remedy library</h2>
-      <input id="remedy-search" type="search" placeholder="Search a symptom, e.g. cough, bloating…" />
+      <header class="page-head">
+        <h1>Remedies</h1>
+        <p>Simple remedies from the kitchen and garden, with honest evidence ratings.</p>
+      </header>
+      <input id="remedy-search" type="search" placeholder="Search a symptom: cough, bloating, sprain…" />
       <div class="filter-row" id="remedy-filters">
         <button class="chip active" data-filter="goal">For my goal</button>
         <button class="chip" data-filter="all">All</button>
@@ -76,43 +106,50 @@
       <div id="remedy-list" class="cards"></div>
     </section>
 
+    <!-- ============ PILLARS ============ -->
     <section id="tab-learn" class="tab">
-      <h2 class="page-title">The 9 pillars of health</h2>
-      <p class="muted">The body is designed to heal itself. Remove what harms it, give it what it needs, and it does much of the healing on its own. The initials of the nine pillars spell <strong>SUSTAIN ME</strong>.</p>
-      <div class="acronym" id="acronym"></div>
-      <h3 class="day-title">A day lived by the pillars</h3>
+      <header class="page-head">
+        <h1>The 9 pillars</h1>
+        <p>The body is designed to heal itself. Remove what harms it, give it what it needs. The initials spell <strong>SUSTAIN ME</strong>.</p>
+      </header>
+      <div class="letters" id="letters"></div>
+      <div id="principle-list" class="accordion"></div>
+      <h2 class="day-title">A day lived by the pillars</h2>
       <ol class="timeline" id="natural-day"></ol>
-      <div id="principle-list" class="cards"></div>
-      <p class="disclaimer">This app gives general wellness information, not medical advice. It does not diagnose or treat disease. Always talk to a qualified health professional before changing medication or treatment, and call emergency services in an emergency.</p>
+      <p class="disclaimer">General wellness information, not medical advice. It does not diagnose or treat disease. Talk to a qualified health professional before changing medication or treatment, and call emergency services in an emergency.</p>
     </section>
   </main>
 
-  <nav class="tabbar">
-    <button data-tab="today" class="active"><span>🏡</span>Today</button>
-    <button data-tab="advisor"><span>💬</span>Advisor</button>
-    <button data-tab="remedies"><span>🌿</span>Remedies</button>
-    <button data-tab="learn"><span>🏛️</span>Pillars</button>
+  <nav class="dock" aria-label="Sections">
+    <button data-tab="today" class="active"><span class="dock-ico">☀</span><span>Today</span></button>
+    <button data-tab="advisor"><span class="dock-ico">✦</span><span>Advisor</span></button>
+    <button data-tab="remedies"><span class="dock-ico">❦</span><span>Remedies</span></button>
+    <button data-tab="learn"><span class="dock-ico">✿</span><span>Pillars</span></button>
   </nav>
 
+  <canvas id="petal-rain" class="petal-rain" aria-hidden="true"></canvas>
+  <div class="toast" id="toast" role="status"></div>
+
+  <!-- ============ DIALOGS ============ -->
   <dialog id="intro">
     <div class="slides" id="slides">
       <section class="slide">
-        <div class="slide-art">🌱</div>
-        <h2>Heal the natural way</h2>
-        <p>Natural Remedy Advisor is your pocket coach for natural health: simple daily habits, whole foods and home remedies that help your body heal itself.</p>
+        <div class="slide-art art-sun"></div>
+        <h2>Live by the sun</h2>
+        <p>Natural Remedy Advisor is your pocket coach for natural health: daily habits, whole foods and home remedies that help your body heal itself. It follows the real time of day and tells you what to do right now.</p>
       </section>
       <section class="slide">
-        <div class="slide-art">🏛️</div>
-        <h2>Built on 9 pillars of health</h2>
-        <p>Every plan and answer comes from nine natural foundations. Their initials spell <strong>SUSTAIN ME</strong>:</p>
-        <div class="acronym small" id="intro-acronym"></div>
+        <div class="slide-art art-flower"></div>
+        <h2>Nine pillars, one flower</h2>
+        <p>Every plan and answer comes from nine natural foundations. Live one today and its petal blooms. Their initials spell <strong>SUSTAIN ME</strong>:</p>
+        <div class="letters mini" id="intro-letters"></div>
       </section>
       <section class="slide">
-        <div class="slide-art">🧭</div>
-        <h2>How it works</h2>
+        <div class="slide-art art-garden"></div>
+        <h2>Grow your garden</h2>
         <ol class="steps">
-          <li><strong>Pick your goal</strong>: better digestion, sleep, energy and more.</li>
-          <li><strong>Follow your plan</strong> on the Today screen and tick off what you've done.</li>
+          <li><strong>Pick a goal</strong>, such as better digestion, sleep or energy.</li>
+          <li><strong>Bloom daily</strong>: tick off pillars and rituals on Today.</li>
           <li><strong>Ask the Advisor</strong> or look up a home remedy whenever you need one.</li>
         </ol>
         <p class="fine">This app shares natural health information. It is not a doctor and can't diagnose illness. Never stop prescribed medication without your doctor, and call emergency services in an emergency.</p>
@@ -124,11 +161,11 @@
 
   <dialog id="onboard">
     <form method="dialog" id="onboard-form">
-      <h2>What's your main goal?</h2>
-      <p class="muted">Your daily plan, remedies and advisor will focus on it. You can change it anytime.</p>
+      <h2>What would you like to heal or improve?</h2>
+      <p class="muted">Your rituals, remedies and advisor will focus on it. Change it anytime.</p>
       <label class="field">Your first name (optional)<input id="ob-name" type="text" maxlength="30" autocomplete="given-name" /></label>
       <div class="goal-grid" id="goal-grid"></div>
-      <button class="primary" id="ob-start" disabled>Start my plan</button>
+      <button class="primary" id="ob-start" disabled>Start growing</button>
     </form>
   </dialog>
 
