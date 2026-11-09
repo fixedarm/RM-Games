@@ -367,3 +367,16 @@ dialog h2 { font-size: 1.5rem; margin-bottom: 6px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ============ CLAIMS ============ */
+.claims-intro { margin: 0 0 4px; color: var(--ink-soft); font-size: .92rem; }
+.claim { background: var(--paper); border: 1px solid var(--line); border-left: 6px solid var(--rc); border-radius: 18px; padding: 14px 16px; box-shadow: var(--shadow); }
+.claim.risk-high { --rc: var(--danger); }
+.claim.risk-medium { --rc: var(--some); }
+.claim.risk-low { --rc: var(--trad); }
+.claim-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.claim-topic { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+.risk-badge { font-size: .7rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; color: var(--rc); background: color-mix(in srgb, var(--rc) 14%, transparent); white-space: nowrap; }
+.claim-text { font-family: var(--display); font-size: 1.05rem; font-weight: 600; margin: 8px 0; }
+.claim p { margin: 6px 0 0; }
+.claim-risk { color: var(--rc); font-weight: 600; font-size: .9rem; }

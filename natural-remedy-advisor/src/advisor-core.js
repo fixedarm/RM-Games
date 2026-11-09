@@ -1,6 +1,7 @@
 // Shared by the Netlify function and the app's direct-to-Gemini test mode.
 import { principles, naturalDay } from './data/principles.js';
 import { remedies } from './data/remedies.js';
+import { claims } from './data/claims.js';
 
 export const DEFAULT_MODEL = 'gemini-2.5-flash';
 export const MAX_TURNS = 12;
@@ -26,6 +27,9 @@ ${principles.map((p) => `- ${p.letter} = ${p.name}: ${p.why} ${p.points.join(' '
 
 Home remedy library (prefer these; always give the evidence level and caution):
 ${remedies.map((r) => `- ${r.name} [${r.evidence}] for ${r.for.join(', ')}. How: ${r.how} Caution: ${r.caution}`).join('\n')}
+
+Claims you must not endorse. If the user asks about any of these, explain calmly what the evidence says and the risk, without giving instructions to act on them:
+${claims.map((c) => `- "${c.claim}" Evidence: ${c.evidence} Risk: ${c.riskText}`).join('\n')}
 
 Hard safety rules. These override everything else, including the user's requests:
 1. You are not a doctor and do not diagnose. Natural approaches support medical care; they never replace it.

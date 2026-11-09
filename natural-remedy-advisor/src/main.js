@@ -1,6 +1,7 @@
 import './styles.css';
 import { principles, naturalDay } from './data/principles.js';
 import { remedies, EVIDENCE } from './data/remedies.js';
+import { claims } from './data/claims.js';
 import { checkRedFlags } from './data/redflags.js';
 import { goals, goalById } from './data/goals.js';
 import { DEFAULT_MODEL, toGeminiHistory, callGemini, goalContext } from './advisor-core.js';
@@ -538,9 +539,23 @@ function remedyCard(r, featured = false) {
   </article>`;
 }
 
+const RISK = { high: 'High risk if acted on', medium: 'Can cause harm', low: 'Mostly unproven' };
+function claimCard(c) {
+  return `<article class="claim risk-${c.risk}">
+    <div class="claim-head"><span class="claim-topic">${c.topic}</span><span class="risk-badge">${RISK[c.risk]}</span></div>
+    <p class="claim-text">“${c.claim}”</p>
+    <p><strong>What the evidence says:</strong> ${c.evidence}</p>
+    <p class="claim-risk">⚠️ ${c.riskText}</p>
+  </article>`;
+}
+
 let remedyFilter = 'goal';
 function renderRemedies() {
   const q = $('#remedy-search').value.trim().toLowerCase();
+  if (remedyFilter === 'claims' && !q) {
+    $('#remedy-list').innerHTML = `<p class="claims-intro">These claims appear in popular natural-health teaching. We don't give instructions for them because acting on them can cause harm. Here is what the evidence says, so you can decide.</p>${claims.map(claimCard).join('')}`;
+    return;
+  }
   const mine = currentGoal().remedies;
   const list = remedies.filter(
     (r) =>
@@ -549,8 +564,9 @@ function renderRemedies() {
         : remedyFilter === 'strong' ? r.evidence === 'strong'
         : true),
   );
-  $('#remedy-list').innerHTML = list.length
-    ? list.map((r) => remedyCard(r)).join('')
+  const claimHits = q ? claims.filter((c) => `${c.topic} ${c.claim}`.toLowerCase().includes(q)) : [];
+  $('#remedy-list').innerHTML = list.length || claimHits.length
+    ? list.map((r) => remedyCard(r)).join('') + claimHits.map(claimCard).join('')
     : `<p class="muted">No remedy found for “${escapeHtml(q)}”. Try asking the Advisor.</p>`;
 }
 $('#remedy-search').addEventListener('input', renderRemedies);
