@@ -101,20 +101,26 @@ let profile = store.get('profile', {});
 const currentGoal = () => goalById(profile.goal) || goals[0];
 
 /* ---------- Intro ---------- */
-const lettersHtml = () =>
-  principles.map((p) => `<button class="letter" data-id="${p.id}" style="--c:${p.color}" title="${p.name}">${p.letter}</button>`).join('');
-$('#intro-letters').innerHTML = lettersHtml();
+const lettersHtml = (tag = 'button') =>
+  principles.map((p) => `<${tag} class="letter" data-id="${p.id}" style="--c:${p.color}" title="${p.name}">${p.letter}</${tag}>`).join('');
+// Plain labels in the intro: buttons there would grab focus on open and scroll the slides sideways.
+$('#intro-letters').innerHTML = lettersHtml('span');
+$('#intro-flower').innerHTML = `<svg viewBox="-170 -170 340 340" aria-hidden="true">${principles
+  .map((p, i) => `<path d="M0,-34 C30,-52 44,-112 0,-150 C-44,-112 -30,-52 0,-34 Z" fill="${p.color}" transform="rotate(${i * 40})"/>`)
+  .join('')}<circle r="40" fill="#f2b84b"/></svg>`;
 
 let slide = 0;
 function showSlide(i) {
   slide = i;
   $('#slides').style.transform = `translateX(-${i * 100}%)`;
+  $('#intro').scrollLeft = 0;
   document.querySelectorAll('#dots i').forEach((d, j) => d.classList.toggle('on', j === i));
   $('#intro-next').textContent = i === 2 ? "I understand, let's start" : 'Next';
 }
 function openIntro() {
   showSlide(0);
   $('#intro').showModal();
+  $('#intro-next').focus({ preventScroll: true, focusVisible: false });
 }
 $('#intro-next').addEventListener('click', () => {
   if (slide < 2) return showSlide(slide + 1);

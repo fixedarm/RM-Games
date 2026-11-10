@@ -336,13 +336,16 @@ input[type='search'] {
 dialog { border: 0; border-radius: 28px; max-width: 440px; width: calc(100% - 28px); max-height: calc(100% - 28px); background: var(--paper); color: var(--ink); padding: 22px; }
 dialog::backdrop { background: rgb(5 15 10 / .6); backdrop-filter: blur(4px); }
 dialog h2 { font-size: 1.5rem; margin-bottom: 6px; }
-#intro { overflow: hidden; padding: 0 0 22px; }
+#intro { overflow: hidden; overflow: clip; padding: 0 0 22px; }
+.slides { overflow: visible; }
 .slides { display: flex; transition: transform .45s var(--ease-spring); }
 .slide { flex: 0 0 100%; padding: 0 22px; }
 .slide p { margin: 8px 0; }
 .slide-art { height: 150px; margin: 0 -22px 18px; }
 .art-sun { background: radial-gradient(circle at 50% 95%, #ffe3a0 0 14%, #ffb54a 15% 22%, transparent 23%), linear-gradient(175deg, #2b2f5e, #b0577a 55%, #f4a46a); }
-.art-flower { background: conic-gradient(from 0deg at 50% 60%, #e2a32b, #3b8fc4, #6b6fc4, #c4669a, #a0785a, #4fb3a9, #5a9a4a, #8c7bb8, #d9673f, #e2a32b); mask: radial-gradient(circle at 50% 60%, #000 0 26%, transparent 27%), radial-gradient(circle at 50% 60%, #000 0 60px, transparent 61px); opacity: .9; }
+.art-flower { display: grid; place-items: center; background: radial-gradient(circle at 50% 55%, #1f6a4b, #0f2a22 75%); }
+.art-flower svg { height: 130px; width: 130px; animation: spin-in 1.2s var(--ease-spring) both; }
+@keyframes spin-in { from { transform: rotate(-60deg) scale(.4); opacity: 0; } }
 .art-garden { background: radial-gradient(ellipse at 20% 100%, #2e8a57 0 18%, transparent 19%), radial-gradient(ellipse at 50% 100%, #3fa66a 0 26%, transparent 27%), radial-gradient(ellipse at 80% 100%, #2e8a57 0 20%, transparent 21%), linear-gradient(180deg, #a8dcef, #e7f6fb); }
 .steps { padding-left: 20px; margin: 10px 0; display: grid; gap: 8px; }
 .fine { font-size: .78rem; color: var(--ink-soft); background: var(--paper-2); border-radius: 12px; padding: 10px 12px; }
@@ -605,3 +608,4 @@ mark { background: color-mix(in srgb, var(--gold) 55%, transparent); color: inhe
   .pcard li { opacity: 1; transform: none; }
   .pcard-letter { transform: none; }
 }
+#intro-next:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--leaf) 35%, transparent); }
