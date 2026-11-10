@@ -79,9 +79,15 @@
 
     <!-- ============ ADVISOR ============ -->
     <section id="tab-advisor" class="tab">
-      <header class="page-head">
-        <h1>Advisor</h1>
-        <p>Ask about a symptom, a food or a habit.</p>
+      <header class="page-head advisor-head">
+        <div>
+          <h1>Advisor</h1>
+          <p id="thread-title">New conversation</p>
+        </div>
+        <div class="head-actions">
+          <button class="pill-btn" id="open-journal"><span>☰</span>Journal <b id="journal-count"></b></button>
+          <button class="round-btn" id="new-thread" aria-label="New conversation">＋</button>
+        </div>
       </header>
       <div id="chat" class="chat" aria-live="polite"></div>
       <div class="suggestions" id="suggestions"></div>
@@ -94,27 +100,34 @@
     <!-- ============ REMEDIES ============ -->
     <section id="tab-remedies" class="tab">
       <header class="page-head">
-        <h1>Remedies</h1>
-        <p>Simple remedies from the kitchen and garden, with honest evidence ratings. "Claims checked" covers popular claims we tested against the evidence.</p>
+        <h1>Apothecary</h1>
+        <p>Remedies from the kitchen and garden, with honest evidence ratings.</p>
       </header>
-      <input id="remedy-search" type="search" placeholder="Search a symptom: cough, bloating, sprain…" />
-      <div class="filter-row" id="remedy-filters">
-        <button class="chip active" data-filter="goal">For my goal</button>
-        <button class="chip" data-filter="all">All</button>
-        <button class="chip" data-filter="strong">Strong evidence</button>
-        <button class="chip" data-filter="claims">Claims checked</button>
+      <div class="search-wrap">
+        <input id="remedy-search" type="search" placeholder="Search: cough, bloating, sprain, ginger…" />
       </div>
-      <div id="remedy-list" class="cards"></div>
+
+      <section class="finder" aria-label="Where does it bother you?">
+        <div class="finder-copy">
+          <h2>Where does it bother you?</h2>
+          <p id="finder-hint">Tap an area of the body.</p>
+        </div>
+        <div class="body-map" id="body-map"></div>
+      </section>
+
+      <div id="zone-results" class="zone-results" hidden></div>
+      <div id="shelves" class="shelves"></div>
     </section>
 
     <!-- ============ PILLARS ============ -->
     <section id="tab-learn" class="tab">
       <header class="page-head">
         <h1>The 9 pillars</h1>
-        <p>The body is designed to heal itself. Remove what harms it, give it what it needs. The initials spell <strong>SUSTAIN ME</strong>.</p>
+        <p>The body is designed to heal itself. Remove what harms it, give it what it needs. Swipe through <strong>SUSTAIN ME</strong>.</p>
       </header>
       <div class="letters" id="letters"></div>
-      <div id="principle-list" class="accordion"></div>
+      <div class="deck" id="deck"></div>
+      <div class="deck-dots" id="deck-dots"></div>
       <h2 class="day-title">A day lived by the pillars</h2>
       <ol class="timeline" id="natural-day"></ol>
       <p class="disclaimer">General wellness information, not medical advice. It does not diagnose or treat disease. Talk to a qualified health professional before changing medication or treatment, and call emergency services in an emergency.</p>
@@ -127,6 +140,29 @@
     <button data-tab="remedies"><span class="dock-ico">❦</span><span>Remedies</span></button>
     <button data-tab="learn"><span class="dock-ico">✿</span><span>Pillars</span></button>
   </nav>
+
+  <!-- Remedy detail sheet -->
+  <div class="rsheet" id="rsheet" hidden>
+    <div class="rsheet-backdrop" data-close></div>
+    <article class="rsheet-card" id="rsheet-card" role="dialog" aria-modal="true" aria-labelledby="rs-title"></article>
+  </div>
+
+  <!-- Advisor journal -->
+  <div class="journal" id="journal" hidden>
+    <div class="journal-backdrop" data-close></div>
+    <section class="journal-panel" role="dialog" aria-modal="true" aria-label="Journal">
+      <header class="journal-head">
+        <h2>Journal</h2>
+        <button class="round-btn" data-close aria-label="Close">✕</button>
+      </header>
+      <input id="journal-search" type="search" placeholder="Search everything you've asked and learned…" />
+      <div class="seg" id="journal-seg">
+        <button class="active" data-view="threads">Conversations</button>
+        <button data-view="insights">Saved insights</button>
+      </div>
+      <div class="journal-list" id="journal-list"></div>
+    </section>
+  </div>
 
   <canvas id="petal-rain" class="petal-rain" aria-hidden="true"></canvas>
   <div class="toast" id="toast" role="status"></div>
