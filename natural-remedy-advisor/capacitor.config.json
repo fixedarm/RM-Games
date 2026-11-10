@@ -1,5 +1,9 @@
 {
   "appId": "com.naturalremedyadvisor.app",
   "appName": "Natural Remedy Advisor",
-  "webDir": "dist"
+  "webDir": "dist",
+  "backgroundColor": "#0f2a22",
+  "android": {
+    "backgroundColor": "#0f2a22"
+  }
 }

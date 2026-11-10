@@ -56,16 +56,19 @@ export function toGeminiHistory(messages) {
   }));
 }
 
-// Returns the answer text; throws with a user-facing message on failure.
-export async function callGemini(contents, apiKey, model = DEFAULT_MODEL, context = '') {
+// Room for a full answer. Gemini 2.5+ models also spend output tokens on hidden
+// "thinking", so a small cap cuts answers off mid-sentence.
+const MAX_OUTPUT_TOKENS = 8192;
+const MAX_CONTINUATIONS = 2;
+
+async function generate(contents, apiKey, model, system) {
+  const generationConfig = { temperature: 0.4, maxOutputTokens: MAX_OUTPUT_TOKENS };
+  // Flash models can skip thinking entirely: faster, cheaper, and the whole budget goes to the answer.
+  if (/flash/.test(model) && /2\.5/.test(model)) generationConfig.thinkingConfig = { thinkingBudget: 0 };
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: context ? `${SYSTEM_PROMPT}\n\nAbout this user: ${context}` : SYSTEM_PROMPT }] },
-      contents,
-      generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
-    }),
+    body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents, generationConfig }),
   });
   if (!res.ok) {
     const detail = await res.text();
@@ -75,7 +78,26 @@ export async function callGemini(contents, apiKey, model = DEFAULT_MODEL, contex
     throw new Error('The advisor is unavailable right now. Please try again.');
   }
   const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
+  const cand = data.candidates?.[0];
+  const text = cand?.content?.parts?.filter((p) => !p.thought).map((p) => p.text || '').join('') || '';
+  return { text, cut: cand?.finishReason === 'MAX_TOKENS' };
+}
+
+// Returns the answer text; throws with a user-facing message on failure.
+// If the model stops at its length limit, ask it to carry on so answers never end mid-sentence.
+export async function callGemini(contents, apiKey, model = DEFAULT_MODEL, context = '') {
+  const system = context ? `${SYSTEM_PROMPT}\n\nAbout this user: ${context}` : SYSTEM_PROMPT;
+  let { text, cut } = await generate(contents, apiKey, model, system);
+  for (let i = 0; cut && text && i < MAX_CONTINUATIONS; i++) {
+    const more = await generate(
+      [...contents, { role: 'model', parts: [{ text }] }, { role: 'user', parts: [{ text: 'Continue exactly where you stopped. Do not repeat anything.' }] }],
+      apiKey,
+      model,
+      system,
+    );
+    text += more.text;
+    cut = more.cut;
+  }
   if (!text) throw new Error('No answer was returned. Try rephrasing.');
   return text;
 }
