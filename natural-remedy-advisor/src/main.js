@@ -1290,21 +1290,33 @@ function noteCard(n) {
   return `<div class="pl-note ${kind}"><span>${icon}</span><div><b>${n.type}</b><p>${n.text}</p></div></div>`;
 }
 
+// Compact reminder shown beside every tool, so the whole protocol is on one screen.
+const quickProtocol = (s) => `<div class="pl-quick">
+    <h3>Quick protocol</h3>
+    <ol>${s.steps.map((st) => `<li><b>${st.n}</b><span><strong>${st.title}.</strong> ${st.text}</span></li>`).join('')}</ol>
+  </div>
+  ${noteCard(s.notes[0])}`;
+
 function toolPage(s) {
-  if (s.utility === 'cpr') return `<section class="pl-page pl-tool">
-      <h2>CPR pacer</h2>
-      <p class="pl-hint">Push on every beat: 105 a minute, 5–6 cm deep. The counter tells you when to give 2 breaths.</p>
+  let tool = '';
+  if (s.utility === 'cpr') tool = `<div class="pl-toolbox cpr-box">
       <button class="cpr-heart" id="cpr-heart" aria-label="Start or stop the CPR pacer"><span id="cpr-count">START</span><small id="cpr-cue">Tap to begin</small></button>
-      <label class="cpr-opt"><input type="checkbox" id="cpr-hands-only" /> Hands-only CPR (no breaths)</label>
-      <p class="pl-hint">Keep going until help or an AED takes over. Swap rescuers every 2 minutes.</p>
-    </section>`;
-  if (s.utility === 'burn_timer') return `<section class="pl-page pl-tool">
-      <h2>20-minute cooling timer</h2>
-      <p class="pl-hint">Cool the burn under cool running water until the ring empties.</p>
-      <div class="burn-ring">${ring(1200, 1200, 220, 14)}<div><strong id="burn-time">20:00</strong><small id="burn-state">Ready</small></div></div>
-      <div class="tool-row"><button class="pl-btn primary-btn" id="burn-go">Start</button><button class="pl-btn" id="burn-reset">Reset</button></div>
-    </section>`;
-  if (s.utility === 'rain_calc') return `<section class="pl-page pl-tool">
+      <div class="cpr-side">
+        <h2>CPR pacer</h2>
+        <p>Push on every beat: <b>105 a minute</b>, <b>5–6 cm</b> deep. After 30 it turns blue: give 2 breaths.</p>
+        <label class="cpr-opt"><input type="checkbox" id="cpr-hands-only" /> Hands-only CPR (no breaths)</label>
+        <p class="pl-hint">Swap rescuers every 2 minutes. Don't stop until help or an AED takes over.</p>
+      </div>
+    </div>`;
+  if (s.utility === 'burn_timer') tool = `<div class="pl-toolbox burn-box">
+      <div class="burn-ring">${ring(1200, 1200, 200, 14)}<div><strong id="burn-time">20:00</strong><small id="burn-state">Ready</small></div></div>
+      <div class="cpr-side">
+        <h2>20-minute cooling timer</h2>
+        <p>Cool, running water until the ring empties. Then cover loosely with cling film.</p>
+        <div class="tool-row"><button class="pl-btn primary-btn" id="burn-go">Start</button><button class="pl-btn" id="burn-reset">Reset</button></div>
+      </div>
+    </div>`;
+  if (s.utility === 'rain_calc') tool = `<div class="pl-toolbox col">
       <h2>Roof yield calculator</h2>
       <div class="calc-grid">
         <label>Roof length (m)<input type="number" id="rc-len" value="10" min="1" inputmode="decimal" /></label>
@@ -1312,61 +1324,65 @@ function toolPage(s) {
         <label>Rainfall (mm)<input type="number" id="rc-rain" value="10" min="1" inputmode="decimal" /></label>
       </div>
       <div class="calc-out" id="rc-out"></div>
-    </section>`;
-  if (s.utility === 'salt_calc') return `<section class="pl-page pl-tool">
+      <p class="pl-hint">Area × rain (mm) × 0.8 = litres. Allow about 1 L of first-flush pipe per m² of roof.</p>
+    </div>`;
+  if (s.utility === 'salt_calc') tool = `<div class="pl-toolbox col">
       <h2>2.5% salt calculator</h2>
       <div class="calc-grid one"><label>Cut vegetables (g)<input type="number" id="salt-veg" value="1000" min="50" step="50" inputmode="decimal" /></label></div>
       <div class="calc-out" id="salt-out"></div>
-    </section>`;
-  return '';
+      <p class="pl-hint">Weigh after cutting. Under 2% risks spoilage; over 3% stalls fermentation.</p>
+    </div>`;
+  return tool ? `<section class="pl-page pl-tool">${tool}${quickProtocol(s)}</section>` : '';
+}
+
+let stepsDone = new Set();
+function stepsHeader(s) {
+  const n = s.steps.filter((_, i) => stepsDone.has(i)).length;
+  return `${n}/${s.steps.length} done`;
 }
 
 function buildPages(s) {
   const list = [];
   const tool = toolPage(s);
-  const guidePage = s.guides.length
-    ? `<section class="pl-page pl-guides"><h2>Visual guide</h2><p class="pl-hint">Tap a picture to enlarge it. Study them first, then follow the steps.</p>
-        ${s.guides.map((g) => `<figure><figcaption>${g.title}</figcaption><img src="${MANUAL_IMG[g.img]}" alt="${g.title}" loading="lazy" width="${g.w}" height="${g.h}" /></figure>`).join('')}</section>`
-    : '';
-  // Steps come after the cover, the tool, the visual guide and the parts check.
-  const firstStep = 1 + (tool ? 1 : 0) + (guidePage ? 1 : 0) + 1;
-  list.push({ label: 'Cover', html: `<section class="pl-page pl-cover">
+  const partItem = (p, i, kind) => `<button class="pl-chipitem ${partsReady.has(`${kind}${i}`) ? 'ready' : ''}" data-part="${kind}${i}">
+      ${p.svg ? `<span class="pl-chip-art">${p.svg}</span>` : ''}<span class="pl-chip-text">${p.q ? `<b>${p.q}</b>` : ''}${p.name}</span><i class="pl-tick">✓</i></button>`;
+  list.push({ label: 'Overview', html: `<section class="pl-page pl-cover">
       <figure class="pl-hero"><img src="${MANUAL_IMG[s.id]}" alt="${s.title}" /><span class="pl-bignum">${s.num}</span></figure>
       <span class="pl-chapter">${CH_STYLE[s.chapter].icon} ${chapterTitle(s.chapter)}</span>
       <h2>${s.title}</h2>
       <p class="pl-sub">${s.sub}</p>
       <blockquote class="pl-why">${s.why}</blockquote>
-      <div class="pl-stats"><span><b>${s.steps.length}</b>steps</span><span><b>${s.parts.length}</b>you need</span><span><b>${s.tools.length}</b>tools</span></div>
-      <h3>Contents</h3>
-      <ol class="pl-toc">${s.steps.map((st, i) => `<li><button data-jump="${firstStep + i}"><span>${st.n}</span>${st.title}</button></li>`).join('')}</ol>
+      <div class="pl-stats"><span><b>${s.steps.length}</b>steps</span><span><b>${s.parts.length + s.tools.length}</b>items</span><span><b>${mastered.includes(s.id) ? '✓' : '–'}</b>${mastered.includes(s.id) ? 'mastered' : 'not drilled'}</span></div>
+      <div class="pl-parts-head"><h3>You need · tap as you gather</h3><span class="pl-ready" id="pl-ready"></span></div>
+      <div class="pl-chips">${s.parts.map((p, i) => partItem(p, i, 'p')).join('')}</div>
+      ${s.tools.length ? `<h3>Tools & contacts</h3><div class="pl-chips">${s.tools.map((p, i) => partItem(p, i, 't')).join('')}</div>` : ''}
+      ${noteCard(s.notes[0])}
     </section>` });
-  if (tool) list.push({ label: 'Tool', html: tool });
-  if (guidePage) list.push({ label: 'Visual guide', html: guidePage });
-  const partItem = (p, i, kind) => `<button class="pl-part ${p.svg ? '' : 'plain'} ${partsReady.has(`${kind}${i}`) ? 'ready' : ''}" data-part="${kind}${i}">
-      ${p.q ? `<span class="pl-q">${p.q}</span>` : ''}${p.svg ? `<span class="pl-part-art">${p.svg}</span>` : ''}<span class="pl-part-name">${p.name}</span><i class="pl-tick">✓</i></button>`;
-  list.push({ label: 'Parts', html: `<section class="pl-page pl-parts">
-      <div class="pl-parts-head"><h2>Gather what you need</h2><span class="pl-ready" id="pl-ready"></span></div>
-      <p class="pl-hint">Tap each item as you lay it out.</p>
-      <div class="pl-part-grid">${s.parts.map((p, i) => partItem(p, i, 'p')).join('')}</div>
-      ${s.tools.length ? `<h3>Tools & contacts</h3><div class="pl-part-grid tools">${s.tools.map((p, i) => partItem(p, i, 't')).join('')}</div>` : ''}
+  if (tool) list.push({ label: s.utility === 'cpr' ? 'CPR pacer' : s.utility === 'burn_timer' ? 'Timer' : 'Calculator', html: tool });
+  if (s.guides.length)
+    list.push({ label: 'Pictures', html: `<section class="pl-page pl-guides"><h2>Visual guide</h2><p class="pl-hint">Tap a picture to enlarge it, then swipe across its panels.</p>
+        ${s.guides.map((g) => `<figure><figcaption>${g.title}</figcaption><img src="${MANUAL_IMG[g.img]}" alt="${g.title}" loading="lazy" width="${g.w}" height="${g.h}" /></figure>`).join('')}</section>` });
+  // All steps on one scrolling page: drawings beside the words, tap a step to tick it off.
+  list.push({ label: 'Steps', html: `<section class="pl-page pl-steps">
+      <div class="pl-parts-head"><h2>Step by step</h2><span class="pl-ready" id="pl-steps-done">${stepsHeader(s)}</span></div>
+      <p class="pl-hint">Tap a step when you've done it.</p>
+      <ol class="pl-steplist">${s.steps.map((st, i) => `<li><button class="pl-stepcard ${st.svg ? 'has-art' : ''} ${stepsDone.has(i) ? 'done' : ''}" data-step="${i}">
+          <span class="pl-stepbadge">${st.n}</span>
+          <span class="pl-stepbody"><strong>${st.title}</strong><span>${st.text}</span></span>
+          ${st.svg ? `<span class="pl-stepart">${st.svg}</span>` : ''}
+        </button></li>`).join('')}</ol>
     </section>` });
-  s.steps.forEach((st, i) =>
-    list.push({ label: `Step ${st.n}`, html: `<section class="pl-page pl-step ${st.svg ? '' : 'text-only'}">
-        ${st.svg ? `<div class="pl-canvas"><span class="pl-stepnum">${st.n}</span>${st.svg}</div>` : `<div class="pl-textnum"><span>${st.n}</span><small>of ${s.steps.length}</small></div>`}
-        <span class="pl-of">Step ${i + 1} of ${s.steps.length}</span>
-        <h2>${st.title}</h2>
-        <p>${st.text}</p>
-      </section>` }),
-  );
-  list.push({ label: 'Safety', html: `<section class="pl-page pl-safety"><h2>Before you finish</h2>${s.notes.map(noteCard).join('')}</section>` });
-  list.push({ label: 'Drill', html: `<section class="pl-page pl-drill">
-      <span class="pl-medal" id="pl-medal">${mastered.includes(s.id) ? '🏅' : '🎯'}</span>
-      <h2>Practice drill</h2>
-      <p class="pl-drill-text">${s.drill}</p>
+  list.push({ label: 'Finish', html: `<section class="pl-page pl-finish">
+      <h2>Stay safe</h2>
+      ${s.notes.map(noteCard).join('')}
+      <div class="pl-drillbox">
+        <span class="pl-medal" id="pl-medal">${mastered.includes(s.id) ? '🏅' : '🎯'}</span>
+        <div><h3>Practice drill</h3><p>${s.drill}</p></div>
+      </div>
       <button class="pl-master ${mastered.includes(s.id) ? 'on' : ''}" id="pl-master">${mastered.includes(s.id) ? '✓ Mastered' : 'I’ve practised this'}</button>
       <button class="pl-ask" data-skill-ask="${s.id}">Ask the advisor about this skill</button>
     </section>` });
-  list.firstStep = firstStep;
+  list.firstStep = list.findIndex((p) => p.label === 'Steps');
   return list;
 }
 
@@ -1536,6 +1552,7 @@ function openSkill(id, from, startAt) {
   const s = skillById[id];
   playing = s;
   partsReady = new Set(store.get(`parts-${id}`, []));
+  stepsDone = new Set(store.get(`steps-${id}`, []));
   pages = buildPages(s);
   // SOS opens straight at step 1 (or the CPR pacer); otherwise resume where you left off.
   const start = startAt === 'steps' ? (s.utility === 'cpr' ? 1 : pages.firstStep) : Math.min(skillPos[id] || 0, pages.length - 1);
@@ -1545,7 +1562,7 @@ function openSkill(id, from, startAt) {
     $('#player').style.setProperty('--c', CH_STYLE[s.chapter].color);
     $('#pl-num').textContent = s.num;
     $('#pl-title').textContent = s.title;
-    $('#pl-progress').innerHTML = pages.map((p, i) => `<button data-jump="${i}" aria-label="${p.label}"><i></i></button>`).join('');
+    $('#pl-progress').innerHTML = pages.map((p, i) => `<button data-jump="${i}">${p.label}</button>`).join('');
     $('#pl-track').innerHTML = pages.map((p) => p.html).join('');
     $('#player').hidden = false;
     $('#player').style.viewTransitionName = 'skill-hero';
@@ -1574,6 +1591,7 @@ function setPage(i) {
   document.querySelectorAll('#pl-progress button').forEach((b, j) => {
     b.classList.toggle('on', j === i);
     b.classList.toggle('past', j < i);
+    if (j === i) b.scrollIntoView({ block: 'nearest', inline: 'center' });
   });
   $('#pl-count').textContent = pages[i].label;
   $('#pl-prev').disabled = i === 0;
@@ -1610,6 +1628,18 @@ $('#pl-close').addEventListener('click', closeSkill);
 $('#player').addEventListener('click', (e) => {
   const jump = e.target.closest('[data-jump]');
   if (jump) return goPage(Number(jump.dataset.jump));
+  const stepBtn = e.target.closest('[data-step]');
+  if (stepBtn) {
+    const i = Number(stepBtn.dataset.step);
+    stepsDone.has(i) ? stepsDone.delete(i) : stepsDone.add(i);
+    stepBtn.classList.toggle('done', stepsDone.has(i));
+    store.set(`steps-${playing.id}`, [...stepsDone]);
+    $('#pl-steps-done').textContent = stepsHeader(playing);
+    $('#pl-steps-done').classList.toggle('all', stepsDone.size >= playing.steps.length);
+    buzz(stepsDone.has(i) ? 12 : 4);
+    if (stepsDone.has(i) && stepsDone.size === playing.steps.length) toast('All steps done. Finish with the safety notes and drill.');
+    return;
+  }
   const part = e.target.closest('[data-part]');
   if (part) {
     const k = part.dataset.part;
