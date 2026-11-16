@@ -86,7 +86,7 @@ h1, h2, h3 { font-family: var(--display); letter-spacing: -.02em; text-wrap: bal
 .tab.active { display: block; animation: rise .45s var(--ease-spring); }
 @keyframes rise { from { opacity: .4; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 #tab-advisor.active { display: flex; flex-direction: column; padding: 0 16px calc(96px + env(safe-area-inset-bottom)); }
-#tab-remedies, #tab-learn { padding-left: 16px; padding-right: 16px; }
+#tab-remedies, #tab-learn, #tab-guide { padding-left: 16px; padding-right: 16px; }
 
 /* ============ SKY ============ */
 .sky {
@@ -609,3 +609,82 @@ mark { background: color-mix(in srgb, var(--gold) 55%, transparent); color: inhe
   .pcard-letter { transform: none; }
 }
 #intro-next:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--leaf) 35%, transparent); }
+
+/* ============ Home Apothecary guide ============ */
+.dock button { font-size: .66rem; }
+.guide-cats { display: flex; gap: 6px; overflow-x: auto; margin: 4px -16px 18px; padding: 2px 16px 6px; scrollbar-width: none; }
+.guide-cats::-webkit-scrollbar { display: none; }
+.guide-cats .chip { flex: none; }
+.basics { margin-bottom: 22px; }
+.basics[hidden] { display: none; }
+.basic {
+  flex: 0 0 170px; scroll-snap-align: start; text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 14px;
+  border-radius: 20px; border: 1px dashed color-mix(in srgb, var(--leaf) 45%, var(--line)); background: var(--leaf-soft);
+}
+.basic span { font-size: 1.6rem; }
+.basic strong { font-family: var(--display); font-size: .98rem; line-height: 1.2; }
+.basic small { font-size: .76rem; color: var(--ink-soft); line-height: 1.3; }
+.guide-index { display: grid; gap: 24px; }
+.chapter-title { display: flex; align-items: center; gap: 10px; font-size: 1.25rem; margin-bottom: 12px; }
+.chapter-title::before { content: ''; width: 6px; height: 22px; border-radius: 3px; background: var(--c); }
+.chapter-title small { font-family: var(--body); font-size: .75rem; font-weight: 700; color: var(--ink-soft); background: var(--paper-2); border-radius: 999px; padding: 2px 9px; }
+.rcard {
+  text-align: left; padding: 0; border: 1px solid var(--line); border-radius: 22px; overflow: hidden; background: var(--paper);
+  box-shadow: var(--shadow); display: flex; flex-direction: column; transition: transform .25s var(--ease-spring);
+}
+.rcard:active { transform: scale(.96); }
+.rcard-art {
+  position: relative; display: grid; place-items: center; height: 104px;
+  background: radial-gradient(circle at 50% 120%, color-mix(in srgb, var(--c) 30%, transparent), transparent 70%), linear-gradient(180deg, #f6efe1, #ece2cd);
+}
+.rcard-art .vessel { height: 86px; width: auto; filter: drop-shadow(0 4px 6px rgb(0 0 0 / .15)); transition: transform .4s var(--ease-spring); }
+.rcard:hover .vessel { transform: rotate(-4deg) scale(1.05); }
+.rcard-body { display: flex; flex-direction: column; gap: 3px; padding: 12px; flex: 1; }
+.rcard-body strong { font-family: var(--display); font-size: 1rem; line-height: 1.2; }
+.rcard-tag { font-size: .76rem; color: var(--ink-soft); line-height: 1.3; flex: 1; }
+.rcard-meta { font-size: .72rem; font-weight: 700; color: var(--c); margin-top: 4px; }
+
+/* Recipe page: a page from a home apothecary book */
+.gpage {
+  position: relative; width: min(680px, 100%); max-height: calc(95% - env(safe-area-inset-top)); overflow-y: auto;
+  border-radius: 30px 30px 0 0; box-shadow: 0 -10px 40px rgb(0 0 0 / .3); background: #f7f1e3; color: #2a2418;
+}
+.gp-head {
+  position: relative; display: flex; align-items: flex-end; gap: 10px; padding: 26px 20px 18px; color: #fff; overflow: hidden;
+  background: radial-gradient(circle at 85% 30%, rgb(255 255 255 / .22) 0 20%, transparent 21%), linear-gradient(150deg, var(--c), color-mix(in srgb, var(--c) 55%, #1a120a));
+}
+.gp-head-text { flex: 1; min-width: 0; padding-right: 4px; }
+.gp-cat { font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; opacity: .9; }
+.gp-head h2 { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: clamp(1.7rem, 7vw, 2.3rem); line-height: 1.05; margin: 6px 0 4px; letter-spacing: -.01em; }
+.gp-tagline { margin: 0; font-style: italic; opacity: .92; }
+.gp-art { flex: none; width: 110px; margin: 0 -6px -10px 0; }
+.gp-art .vessel { width: 100%; height: auto; filter: drop-shadow(0 8px 12px rgb(0 0 0 / .3)); animation: spin-in .9s var(--ease-spring) both; }
+.gp-paper { padding: 18px 20px calc(26px + env(safe-area-inset-bottom)); display: grid; gap: 14px;
+  background-image: radial-gradient(rgb(120 90 40 / .05) 1px, transparent 1px); background-size: 6px 6px; }
+.gp-intro { margin: 0; font-family: Georgia, serif; font-size: 1.02rem; line-height: 1.55; }
+.gp-intro::first-letter { float: left; font-size: 3.1rem; line-height: .9; padding: 4px 8px 0 0; color: var(--c); font-weight: 700; }
+.gp-facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.gp-facts span { display: flex; flex-direction: column; padding: 8px 10px; border-radius: 12px; background: #fffaf0; border: 1px solid #e6dcc6; font-size: .84rem; }
+.gp-facts b { font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; color: #8a7a5c; }
+.gp-cols { display: grid; gap: 14px; }
+@media (min-width: 560px) { .gp-cols { grid-template-columns: 0.9fr 1.1fr; align-items: start; } }
+.gp-box { border-radius: 14px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--c) 35%, #d8ccb0); background: #fffaf0; }
+.gp-box h3, .gp-instructions h3, .gp-dosage h3 { font-family: Georgia, serif; font-size: 1rem; letter-spacing: .16em; text-transform: uppercase; margin: 0; }
+.gp-box h3 { padding: 8px 12px; color: #fff; background: color-mix(in srgb, var(--c) 80%, #2e5e2e); }
+.gp-ingredients ul { list-style: none; margin: 0; padding: 6px 12px 10px; }
+.gp-ingredients li { display: grid; grid-template-columns: 92px 1fr; gap: 8px; padding: 7px 0; border-bottom: 1px dashed #e2d6bb; font-size: .9rem; }
+.gp-ingredients li:last-child { border-bottom: 0; }
+.gp-ingredients b { color: color-mix(in srgb, var(--c) 75%, #3a2a10); }
+.gp-instructions h3 { color: color-mix(in srgb, var(--c) 75%, #3a2a10); margin-bottom: 8px; }
+.gp-instructions ol { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 10px; }
+.gp-instructions li { counter-increment: s; display: flex; gap: 10px; font-size: .94rem; line-height: 1.45; animation: pop .45s var(--ease-spring) both; animation-delay: calc(var(--d) + 150ms); }
+.gp-instructions li::before { content: counter(s); flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-family: Georgia, serif; font-weight: 700; color: #fff; background: var(--c); }
+.gp-notes p { margin: 0; padding: 10px 12px; font-size: .9rem; }
+.gp-dosage { padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--c) 16%, #fffaf0); border-left: 6px solid var(--c); }
+.gp-dosage h3 { color: color-mix(in srgb, var(--c) 75%, #3a2a10); }
+.gp-dosage p { margin: 4px 0 0; }
+.gp-caution { padding: 12px 14px; border-radius: 14px; background: #fff1d6; color: #6b4800; border: 1px dashed #d9a73f; }
+.gp-caution p { margin: 4px 0 0; font-size: .9rem; }
+.gp-uses { margin: 0; font-size: .8rem; color: #8a7a5c; }
+.gpage .secondary { color: #2a2418; border-color: #d8ccb0; background: #fffaf0; }
+:root[data-theme="dark"] .gpage { filter: brightness(.94); }

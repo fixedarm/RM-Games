@@ -3,6 +3,7 @@ import { principles, naturalDay } from './data/principles.js';
 import { remedies, EVIDENCE } from './data/remedies.js';
 import { claims } from './data/claims.js';
 import { KINDS, ZONES, kindOf, zonesOf, stepsOf } from './data/taxonomy.js';
+import { GUIDE_CATS, BASICS, recipes } from './data/guide.js';
 import { checkRedFlags } from './data/redflags.js';
 import { goals, goalById } from './data/goals.js';
 import { DEFAULT_MODEL, toGeminiHistory, callGemini, goalContext } from './advisor-core.js';
@@ -81,7 +82,7 @@ function transition(update, type) {
 }
 
 /* ---------- Tabs ---------- */
-const TAB_ORDER = ['today', 'advisor', 'remedies', 'learn'];
+const TAB_ORDER = ['today', 'advisor', 'remedies', 'guide', 'learn'];
 let currentTab = null;
 function showTab(name) {
   if (name === currentTab) return;
@@ -977,6 +978,168 @@ function renderRemedies() {
   renderSearch();
 }
 
+/* ---------- Home Apothecary guide ---------- */
+const catById = Object.fromEntries(GUIDE_CATS.map((c) => [c.id, c]));
+let guideCat = 'all';
+let savedRecipes = store.get('savedRecipes', []);
+
+// Small illustration of the finished remedy: tin, jar, bottle, cup or bowl.
+function vesselSvg(kind, color) {
+  const shapes = {
+    tin: `<ellipse cx="60" cy="74" rx="46" ry="12" fill="#0002"/><rect x="16" y="46" width="88" height="26" rx="6" fill="#c9ced1"/><rect x="16" y="46" width="88" height="6" fill="#0001"/><ellipse cx="60" cy="46" rx="44" ry="12" fill="${color}"/><ellipse cx="60" cy="44" rx="34" ry="7" fill="#fff6"/>`,
+    jar: `<ellipse cx="60" cy="98" rx="34" ry="7" fill="#0002"/><rect x="34" y="14" width="52" height="14" rx="3" fill="#8a6a43"/><path d="M30 34 q0-6 6-6 h48 q6 0 6 6 v54 q0 8-8 8 h-44 q-8 0-8-8z" fill="#fff5" stroke="#fffa"/><path d="M33 52 h54 v36 q0 6-6 6 h-42 q-6 0-6-6z" fill="${color}"/><rect x="40" y="58" width="40" height="18" rx="3" fill="#fff9"/>`,
+    bottle: `<ellipse cx="60" cy="102" rx="26" ry="6" fill="#0002"/><rect x="52" y="6" width="16" height="14" rx="3" fill="#3a2b1d"/><path d="M54 20 h12 v12 q16 6 16 22 v42 q0 6-6 6 h-32 q-6 0-6-6 v-42 q0-16 16-22z" fill="${color}"/><path d="M44 58 h32 v22 h-32z" fill="#fff9"/><path d="M48 40 q-2 10 0 50" stroke="#fff5" stroke-width="3" fill="none"/>`,
+    cup: `<ellipse cx="60" cy="98" rx="40" ry="7" fill="#0002"/><path d="M26 46 h64 v24 q0 26-32 26 q-32 0-32-26z" fill="#f4f1ea" stroke="#d9d2c4"/><path d="M90 54 q16 0 14 14 q-2 12-16 10" fill="none" stroke="#d9d2c4" stroke-width="5"/><ellipse cx="58" cy="46" rx="32" ry="7" fill="${color}"/><path d="M48 32 q-6-10 2-18 M64 30 q-6-10 2-18" stroke="#fff9" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+    bowl: `<ellipse cx="60" cy="94" rx="46" ry="8" fill="#0002"/><path d="M14 52 h92 q0 40-46 40 q-46 0-46-40z" fill="#e8e1d3" stroke="#cfc6b4"/><ellipse cx="60" cy="52" rx="46" ry="10" fill="${color}"/><circle cx="46" cy="50" r="3" fill="#fff9"/><circle cx="72" cy="53" r="2" fill="#fff9"/><path d="M80 30 l14 -18" stroke="#8a6a43" stroke-width="5" stroke-linecap="round"/>`,
+  };
+  return `<svg viewBox="0 0 120 110" class="vessel" aria-hidden="true">${shapes[kind]}</svg>`;
+}
+
+function recipeCard(r, i = 0) {
+  const c = catById[r.cat];
+  const saved = savedRecipes.includes(r.id);
+  return `<button class="rcard stagger" data-recipe="${r.id}" style="--c:${c.color};--d:${Math.min(i, 12) * 30}ms">
+    <span class="rcard-art">${vesselSvg(c.vessel, c.color)}${saved ? '<span class="tile-fav">★</span>' : ''}</span>
+    <span class="rcard-body">
+      <strong>${r.name}</strong>
+      <span class="rcard-tag">${r.tagline}</span>
+      <span class="rcard-meta">⏱ ${r.time}</span>
+    </span>
+  </button>`;
+}
+
+function renderGuide() {
+  const q = $('#guide-search').value.trim().toLowerCase();
+  $('#guide-cats').innerHTML = [{ id: 'all', label: 'All recipes' }, { id: 'saved', label: '★ Saved' }, ...GUIDE_CATS]
+    .map((c) => `<button class="chip ${guideCat === c.id ? 'active' : ''}" data-gcat="${c.id}">${c.label}</button>`)
+    .join('');
+  const list = recipes.filter((r) => {
+    if (q) return `${r.name} ${r.tagline} ${r.uses.join(' ')} ${r.ingredients.map((x) => x[1]).join(' ')}`.toLowerCase().includes(q);
+    if (guideCat === 'saved') return savedRecipes.includes(r.id);
+    return guideCat === 'all' || r.cat === guideCat;
+  });
+  document.querySelector('.basics').hidden = Boolean(q) || guideCat !== 'all';
+  if (!list.length) {
+    $('#guide-index').innerHTML = `<div class="empty"><span>❧</span><p>${guideCat === 'saved' && !q ? 'Tap ☆ Save on a recipe to keep it here.' : 'No recipe matches.'}</p></div>`;
+    return;
+  }
+  // Grouped into chapters, like a recipe book.
+  const groups = GUIDE_CATS.map((c) => [c, list.filter((r) => r.cat === c.id)]).filter(([, rs]) => rs.length);
+  let n = 0;
+  $('#guide-index').innerHTML = groups
+    .map(([c, rs]) => `<section class="chapter"><h2 class="chapter-title" style="--c:${c.color}"><span>${c.label}</span><small>${rs.length}</small></h2>
+      <div class="grid">${rs.map((r) => recipeCard(r, n++)).join('')}</div></section>`)
+    .join('');
+}
+$('#basics').innerHTML = BASICS.map((b) => `<button class="basic" data-basic="${b.id}"><span>${b.icon}</span><strong>${b.title}</strong><small>${b.text}</small></button>`).join('');
+$('#guide-search').addEventListener('input', renderGuide);
+$('#guide-cats').addEventListener('click', (e) => {
+  if (!e.target.dataset.gcat) return;
+  guideCat = e.target.dataset.gcat;
+  transition(renderGuide, 'fade');
+});
+
+const EV_LABEL = { strong: 'Strong evidence', some: 'Some evidence', traditional: 'Traditional use' };
+let guideSource = null;
+function openGuidePage(html, src) {
+  if (src) src.style.viewTransitionName = 'guide-hero';
+  guideSource = src;
+  transition(() => {
+    if (src) src.style.viewTransitionName = '';
+    $('#gpage').innerHTML = html;
+    $('#gpage').scrollTop = 0;
+    $('#gsheet').hidden = false;
+  }, 'morph');
+  buzz(8);
+}
+function recipePage(r) {
+  const c = catById[r.cat];
+  const saved = savedRecipes.includes(r.id);
+  return `<header class="gp-head" style="--c:${c.color};view-transition-name:guide-hero">
+      <button class="rs-close" data-close aria-label="Close">✕</button>
+      <div class="gp-head-text">
+        <span class="gp-cat">${c.label}</span>
+        <h2 id="gp-title">${r.name}</h2>
+        <p class="gp-tagline">${r.tagline}</p>
+      </div>
+      <div class="gp-art">${vesselSvg(c.vessel, c.color)}</div>
+    </header>
+    <div class="gp-paper" style="--c:${c.color}">
+      <p class="gp-intro">${r.intro}</p>
+      <div class="gp-facts"><span><b>Makes</b>${r.makes}</span><span><b>Time</b>${r.time}</span><span><b>Keeps</b>${r.keeps}</span><span><b>Evidence</b>${EV_LABEL[r.evidence]}</span></div>
+      <div class="gp-cols">
+        <section class="gp-box gp-ingredients">
+          <h3>Ingredients</h3>
+          <ul>${r.ingredients.map(([qty, item]) => `<li><b>${qty}</b><span>${item}</span></li>`).join('')}</ul>
+        </section>
+        <section class="gp-instructions">
+          <h3>Instructions</h3>
+          <ol>${r.steps.map((s, i) => `<li style="--d:${i * 70}ms">${s}</li>`).join('')}</ol>
+        </section>
+      </div>
+      ${r.notes ? `<section class="gp-box gp-notes"><h3>Notes</h3><p>${r.notes}</p></section>` : ''}
+      <section class="gp-dosage"><h3>Dosage</h3><p>${r.dosage}</p></section>
+      <section class="gp-caution"><strong>⚠️ Safety</strong><p>${r.caution}</p></section>
+      <p class="gp-uses">Used for: ${r.uses.join(' · ')}</p>
+      <div class="rs-actions">
+        <button class="secondary" data-rsave="${r.id}">${saved ? '★ Saved' : '☆ Save'}</button>
+        <button class="primary" data-rask="${r.id}">Ask the advisor about this</button>
+      </div>
+    </div>`;
+}
+function basicPage(b) {
+  return `<header class="gp-head" style="--c:#2e8a57;view-transition-name:guide-hero">
+      <button class="rs-close" data-close aria-label="Close">✕</button>
+      <div class="gp-head-text">
+        <span class="gp-cat">Start here</span>
+        <h2 id="gp-title">${b.icon} ${b.title}</h2>
+        <p class="gp-tagline">${b.text}</p>
+      </div>
+    </header>
+    <div class="gp-paper" style="--c:#2e8a57">
+      <section class="gp-instructions"><ol>${b.steps.map((s, i) => `<li style="--d:${i * 70}ms">${s}</li>`).join('')}</ol></section>
+    </div>`;
+}
+function closeGuidePage() {
+  const src = guideSource && document.contains(guideSource) ? guideSource : null;
+  transition(() => {
+    $('#gsheet').hidden = true;
+    if (src) src.style.viewTransitionName = 'guide-hero';
+    document.querySelector('.gp-head')?.style.setProperty('view-transition-name', 'none');
+  }, 'morph')?.finished?.finally(() => src && (src.style.viewTransitionName = ''));
+  if (!document.startViewTransition || reduceMotion) src && (src.style.viewTransitionName = '');
+}
+document.addEventListener('click', (e) => {
+  const card = e.target.closest('[data-recipe]');
+  if (card) return openGuidePage(recipePage(recipes.find((r) => r.id === card.dataset.recipe)), card);
+  const basic = e.target.closest('[data-basic]');
+  if (basic) openGuidePage(basicPage(BASICS.find((b) => b.id === basic.dataset.basic)), basic);
+});
+$('#gsheet').addEventListener('click', (e) => {
+  if (e.target.closest('[data-close]')) return closeGuidePage();
+  const save = e.target.closest('[data-rsave]');
+  if (save) {
+    const id = save.dataset.rsave;
+    savedRecipes = savedRecipes.includes(id) ? savedRecipes.filter((x) => x !== id) : [id, ...savedRecipes];
+    store.set('savedRecipes', savedRecipes);
+    const on = savedRecipes.includes(id);
+    save.textContent = on ? '★ Saved' : '☆ Save';
+    toast(on ? 'Recipe saved ★' : 'Removed from Saved');
+    buzz();
+    renderGuide();
+  }
+  const askBtn = e.target.closest('[data-rask]');
+  if (askBtn) {
+    const r = recipes.find((x) => x.id === askBtn.dataset.rask);
+    $('#gsheet').hidden = true;
+    newThread();
+    ask(`I want to make "${r.name}" (${r.tagline.toLowerCase()}). Is it suitable for me, what can I substitute, and what should I watch out for?`);
+  }
+});
+addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !$('#gsheet').hidden) closeGuidePage();
+});
+
 /* ---------- Pillars deck ---------- */
 $('#letters').innerHTML = lettersHtml();
 $('#deck').innerHTML = principles
@@ -1028,6 +1191,7 @@ function renderAll() {
   renderToday();
   renderRemedies();
   renderTimeline();
+  renderGuide();
   renderChat();
 }
 renderAll();

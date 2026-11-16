@@ -119,6 +119,23 @@
       <div id="shelves" class="shelves"></div>
     </section>
 
+    <!-- ============ GUIDE ============ -->
+    <section id="tab-guide" class="tab">
+      <header class="page-head">
+        <h1>Home Apothecary</h1>
+        <p>A recipe book of balms, teas, syrups and tonics to make at home, each with dosage and safety notes.</p>
+      </header>
+      <div class="search-wrap">
+        <input id="guide-search" type="search" placeholder="Search recipes: cough, balm, sleep, ginger…" />
+      </div>
+      <div class="guide-cats" id="guide-cats"></div>
+      <section class="basics">
+        <div class="shelf-head"><h2>Start here</h2><span>6 basics</span></div>
+        <div class="shelf-row" id="basics"></div>
+      </section>
+      <div id="guide-index" class="guide-index"></div>
+    </section>
+
     <!-- ============ PILLARS ============ -->
     <section id="tab-learn" class="tab">
       <header class="page-head">
@@ -138,6 +155,7 @@
     <button data-tab="today" class="active"><span class="dock-ico">☀</span><span>Today</span></button>
     <button data-tab="advisor"><span class="dock-ico">✦</span><span>Advisor</span></button>
     <button data-tab="remedies"><span class="dock-ico">❦</span><span>Remedies</span></button>
+    <button data-tab="guide"><span class="dock-ico">❧</span><span>Guide</span></button>
     <button data-tab="learn"><span class="dock-ico">✿</span><span>Pillars</span></button>
   </nav>
 
@@ -145,6 +163,12 @@
   <div class="rsheet" id="rsheet" hidden>
     <div class="rsheet-backdrop" data-close></div>
     <article class="rsheet-card" id="rsheet-card" role="dialog" aria-modal="true" aria-labelledby="rs-title"></article>
+  </div>
+
+  <!-- Apothecary guide page -->
+  <div class="rsheet gsheet" id="gsheet" hidden>
+    <div class="rsheet-backdrop" data-close></div>
+    <article class="gpage" id="gpage" role="dialog" aria-modal="true" aria-labelledby="gp-title"></article>
   </div>
 
   <!-- Advisor journal -->
