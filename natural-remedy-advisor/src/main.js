@@ -4,6 +4,7 @@ import { remedies, EVIDENCE } from './data/remedies.js';
 import { claims } from './data/claims.js';
 import { KINDS, ZONES, kindOf, zonesOf, stepsOf } from './data/taxonomy.js';
 import { GUIDE_CATS, BASICS, recipes } from './data/guide.js';
+import manual from './data/manual.json';
 import { checkRedFlags } from './data/redflags.js';
 import { goals, goalById } from './data/goals.js';
 import { DEFAULT_MODEL, toGeminiHistory, callGemini, goalContext } from './advisor-core.js';
@@ -1140,6 +1141,312 @@ addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !$('#gsheet').hidden) closeGuidePage();
 });
 
+/* ---------- Lost skills: assembly manual ---------- */
+// Shared arrow/pattern definitions used by every line drawing.
+document.body.insertAdjacentHTML('afterbegin', `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${manual.sprite}</svg>`);
+
+const CH_STYLE = {
+  1: { icon: '🏠', color: '#3b8fc4' }, 2: { icon: '🥫', color: '#d9673f' }, 3: { icon: '🔥', color: '#c9932e' }, 4: { icon: '⛑️', color: '#c0352b' },
+  5: { icon: '🧰', color: '#6b6fc4' }, 6: { icon: '🌱', color: '#2e8a57' }, 7: { icon: '🚨', color: '#d94b4b' }, 8: { icon: '🤝', color: '#c4669a' },
+};
+const skillById = Object.fromEntries(manual.skills.map((s) => [s.id, s]));
+let mastered = store.get('mastered', []);
+let skillPos = store.get('skillPos', {});
+let skillChapter = 'all';
+let guideMode = store.get('guideMode', 'recipes');
+
+function setGuideMode(mode, animate = true) {
+  guideMode = mode;
+  store.set('guideMode', mode);
+  const apply = () => {
+    document.querySelectorAll('#mode-switch button').forEach((b) => b.classList.toggle('active', b.dataset.mode === mode));
+    $('#mode-switch').dataset.mode = mode;
+    $('#guide-recipes').hidden = mode !== 'recipes';
+    $('#guide-skills').hidden = mode !== 'skills';
+    $('#guide-title').textContent = mode === 'skills' ? 'Lost Skills' : 'Home Apothecary';
+    $('#guide-sub').textContent = mode === 'skills'
+      ? `An illustrated assembly manual: ${manual.skills.length} hands-on skills for water, food, fire, first aid and hard times, one step at a time.`
+      : 'A recipe book of balms, teas, syrups and tonics to make at home, each with dosage and safety notes.';
+  };
+  animate ? transition(apply, 'fade') : apply();
+}
+$('#mode-switch').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-mode]');
+  if (b && b.dataset.mode !== guideMode) {
+    buzz();
+    setGuideMode(b.dataset.mode);
+  }
+});
+
+function ring(done, total, size = 120, stroke = 10) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  return `<svg viewBox="0 0 ${size} ${size}" class="ring-svg" aria-hidden="true">
+    <circle cx="${size / 2}" cy="${size / 2}" r="${r}" class="ring-track" stroke-width="${stroke}"/>
+    <circle cx="${size / 2}" cy="${size / 2}" r="${r}" class="ring-fill" stroke-width="${stroke}" stroke-dasharray="${(done / total) * c} ${c}" transform="rotate(-90 ${size / 2} ${size / 2})"/>
+  </svg>`;
+}
+
+function renderReadiness() {
+  const total = manual.skills.length;
+  const done = mastered.filter((id) => skillById[id]).length;
+  const pct = Math.round((done / total) * 100);
+  const bars = manual.chapters
+    .map((ch) => {
+      const list = manual.skills.filter((s) => s.chapter === ch.id);
+      const d = list.filter((s) => mastered.includes(s.id)).length;
+      return `<span class="rd-bar" title="${ch.title}: ${d}/${list.length}" style="--c:${CH_STYLE[ch.id].color};--p:${(d / list.length) * 100}%"><i></i></span>`;
+    })
+    .join('');
+  const level = pct >= 75 ? 'Self-reliant' : pct >= 40 ? 'Capable' : pct >= 10 ? 'Apprentice' : 'Beginner';
+  $('#readiness').innerHTML = `
+    <div class="rd-ring">${ring(done, total)}<div><strong>${done}</strong><small>of ${total}</small></div></div>
+    <div class="rd-copy">
+      <span class="rd-level">${level} · ${pct}%</span>
+      <h2>Your readiness</h2>
+      <p>Open a skill, follow it step by step, then do its practice drill to master it.</p>
+      <div class="rd-bars">${bars}</div>
+    </div>`;
+}
+
+function renderChapterRail() {
+  const card = (id, title, icon, color, d, n) => `<button class="ch-card ${skillChapter === id ? 'on' : ''}" data-ch="${id}" style="--c:${color}">
+      <span class="ch-num">${id === 'all' ? '★' : id}</span><span class="ch-ico">${icon}</span>
+      <strong>${title}</strong>
+      <span class="ch-meta">${d}/${n} mastered</span>
+      <span class="ch-bar"><i style="width:${n ? (d / n) * 100 : 0}%"></i></span>
+    </button>`;
+  $('#chapter-rail').innerHTML =
+    card('all', 'All skills', '📘', '#1b3a5c', mastered.filter((id) => skillById[id]).length, manual.skills.length) +
+    manual.chapters
+      .map((ch) => {
+        const list = manual.skills.filter((s) => s.chapter === ch.id);
+        return card(ch.id, ch.title, CH_STYLE[ch.id].icon, CH_STYLE[ch.id].color, list.filter((s) => mastered.includes(s.id)).length, list.length);
+      })
+      .join('');
+}
+
+function skillCard(s, i) {
+  const done = mastered.includes(s.id);
+  const pos = skillPos[s.id];
+  const ch = CH_STYLE[s.chapter];
+  return `<button class="sk-card stagger ${done ? 'done' : ''}" data-skill="${s.id}" style="--c:${ch.color};--d:${Math.min(i, 14) * 28}ms">
+    <span class="sk-thumb">${s.steps[0].svg}</span>
+    <span class="sk-body">
+      <span class="sk-head"><span class="sk-num">${s.num}</span><span class="sk-ch">${ch.icon} ${manual.chapters.find((c) => c.id === s.chapter).title}</span></span>
+      <strong>${s.title}</strong>
+      <span class="sk-sub">${s.sub}</span>
+      <span class="sk-meta">${s.steps.length} steps · ${s.parts.length} parts${s.tools.length ? ` · ${s.tools.length} tools` : ''}</span>
+      ${pos && !done ? `<span class="sk-resume">▶ Resume where you left off</span>` : ''}
+    </span>
+    ${done ? '<span class="sk-stamp">Mastered</span>' : ''}
+  </button>`;
+}
+
+function renderSkillList() {
+  const q = $('#skill-search').value.trim().toLowerCase();
+  const list = manual.skills.filter((s) => {
+    if (q) return `${s.title} ${s.sub} ${s.why} ${s.steps.map((x) => `${x.title} ${x.text}`).join(' ')} ${s.parts.map((p) => p.name).join(' ')}`.toLowerCase().includes(q);
+    return skillChapter === 'all' || s.chapter === skillChapter;
+  });
+  $('#chapter-rail').hidden = Boolean(q);
+  $('#skill-list').innerHTML = list.length
+    ? list.map(skillCard).join('')
+    : `<div class="empty"><span>⚒</span><p>No skill matches “${escapeHtml(q)}”.</p></div>`;
+}
+
+function renderSkills() {
+  renderReadiness();
+  renderChapterRail();
+  renderSkillList();
+  $('#manual-foot').textContent = manual.foot;
+}
+$('#skill-search').addEventListener('input', renderSkillList);
+$('#chapter-rail').addEventListener('click', (e) => {
+  const c = e.target.closest('[data-ch]');
+  if (!c) return;
+  skillChapter = c.dataset.ch;
+  buzz();
+  transition(() => {
+    renderChapterRail();
+    renderSkillList();
+  }, 'fade');
+});
+
+/* Build mode: a swipeable instruction booklet */
+let playing = null;
+let pages = [];
+let pageIdx = 0;
+let partsReady = new Set();
+
+function noteCard(n) {
+  const kind = /danger/i.test(n.type) ? 'danger' : /tip/i.test(n.type) ? 'tip' : 'ok';
+  const icon = { danger: '⚠', tip: '💡', ok: '✓' }[kind];
+  return `<div class="pl-note ${kind}"><span>${icon}</span><div><b>${n.type}</b><p>${n.text}</p></div></div>`;
+}
+
+function buildPages(s) {
+  const ch = manual.chapters.find((c) => c.id === s.chapter);
+  const list = [];
+  list.push({ label: 'Cover', html: `<section class="pl-page pl-cover">
+      <span class="pl-chapter">${CH_STYLE[s.chapter].icon} Chapter ${s.chapter} · ${ch.title}</span>
+      <span class="pl-bignum">${s.num}</span>
+      <h2>${s.title}</h2>
+      <p class="pl-sub">${s.sub}</p>
+      <blockquote class="pl-why">${s.why}</blockquote>
+      <div class="pl-stats"><span><b>${s.steps.length}</b>steps</span><span><b>${s.parts.length}</b>parts</span><span><b>${s.tools.length}</b>tools</span></div>
+      <h3>Contents</h3>
+      <ol class="pl-toc">${s.steps.map((st, i) => `<li><button data-jump="${i + 2}"><span>${st.n}</span>${st.title}</button></li>`).join('')}</ol>
+    </section>` });
+  const partItem = (p, i, kind) => `<button class="pl-part ${partsReady.has(`${kind}${i}`) ? 'ready' : ''}" data-part="${kind}${i}">
+      ${p.q ? `<span class="pl-q">${p.q}</span>` : ''}<span class="pl-part-art">${p.svg}</span><span class="pl-part-name">${p.name}</span><i class="pl-tick">✓</i></button>`;
+  list.push({ label: 'Parts', html: `<section class="pl-page pl-parts">
+      <div class="pl-parts-head"><h2>Gather your parts</h2><span class="pl-ready" id="pl-ready"></span></div>
+      <p class="pl-hint">Tap each item as you lay it out.</p>
+      <div class="pl-part-grid">${s.parts.map((p, i) => partItem(p, i, 'p')).join('')}</div>
+      ${s.tools.length ? `<h3>Tools</h3><div class="pl-part-grid tools">${s.tools.map((p, i) => partItem(p, i, 't')).join('')}</div>` : ''}
+    </section>` });
+  s.steps.forEach((st, i) =>
+    list.push({ label: `Step ${st.n}`, html: `<section class="pl-page pl-step">
+        <div class="pl-canvas"><span class="pl-stepnum">${st.n}</span>${st.svg}</div>
+        <span class="pl-of">Step ${i + 1} of ${s.steps.length}</span>
+        <h2>${st.title}</h2>
+        <p>${st.text}</p>
+      </section>` }),
+  );
+  list.push({ label: 'Safety', html: `<section class="pl-page pl-safety"><h2>Before you finish</h2>${s.notes.map(noteCard).join('')}</section>` });
+  list.push({ label: 'Drill', html: `<section class="pl-page pl-drill">
+      <span class="pl-medal" id="pl-medal">${mastered.includes(s.id) ? '🏅' : '🎯'}</span>
+      <h2>Practice drill</h2>
+      <p class="pl-drill-text">${s.drill}</p>
+      <button class="pl-master ${mastered.includes(s.id) ? 'on' : ''}" id="pl-master">${mastered.includes(s.id) ? '✓ Mastered' : 'I’ve practised this'}</button>
+      <button class="pl-ask" data-skill-ask="${s.id}">Ask the advisor about this skill</button>
+    </section>` });
+  return list;
+}
+
+function openSkill(id, from) {
+  const s = skillById[id];
+  playing = s;
+  partsReady = new Set(store.get(`parts-${id}`, []));
+  pages = buildPages(s);
+  if (from) from.style.viewTransitionName = 'skill-hero';
+  transition(() => {
+    if (from) from.style.viewTransitionName = '';
+    $('#player').style.setProperty('--c', CH_STYLE[s.chapter].color);
+    $('#pl-num').textContent = s.num;
+    $('#pl-title').textContent = s.title;
+    $('#pl-progress').innerHTML = pages.map((p, i) => `<button data-jump="${i}" aria-label="${p.label}"><i></i></button>`).join('');
+    $('#pl-track').innerHTML = pages.map((p) => p.html).join('');
+    $('#player').hidden = false;
+    $('#player').style.viewTransitionName = 'skill-hero';
+    updateReady();
+  }, 'morph')?.finished?.finally(() => ($('#player').style.viewTransitionName = ''));
+  const start = Math.min(skillPos[id] || 0, pages.length - 1);
+  requestAnimationFrame(() => goPage(start, false));
+  buzz(8);
+}
+function closeSkill() {
+  transition(() => ($('#player').hidden = true), 'sheet');
+  playing = null;
+  renderSkills();
+}
+function goPage(i, smooth = true) {
+  i = Math.max(0, Math.min(pages.length - 1, i));
+  const track = $('#pl-track');
+  track.scrollTo({ left: i * track.clientWidth, behavior: smooth && !reduceMotion ? 'smooth' : 'auto' });
+  setPage(i);
+}
+function setPage(i) {
+  pageIdx = i;
+  document.querySelectorAll('#pl-progress button').forEach((b, j) => {
+    b.classList.toggle('on', j === i);
+    b.classList.toggle('past', j < i);
+  });
+  $('#pl-count').textContent = pages[i].label;
+  $('#pl-prev').disabled = i === 0;
+  const last = i === pages.length - 1;
+  $('#pl-next').textContent = last ? 'Finish ✓' : `${pages[i + 1].label} →`;
+  if (playing) {
+    skillPos[playing.id] = i;
+    store.set('skillPos', skillPos);
+  }
+}
+let scrollTimer;
+$('#pl-track').addEventListener('scroll', () => {
+  clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(() => {
+    const i = Math.round($('#pl-track').scrollLeft / $('#pl-track').clientWidth);
+    if (i !== pageIdx) {
+      setPage(i);
+      buzz(5);
+    }
+  }, 80);
+});
+function updateReady() {
+  if (!playing) return;
+  const total = playing.parts.length + playing.tools.length;
+  const el = $('#pl-ready');
+  if (el) {
+    el.textContent = partsReady.size >= total ? 'All set ✓' : `${partsReady.size}/${total} ready`;
+    el.classList.toggle('all', partsReady.size >= total);
+  }
+}
+$('#pl-prev').addEventListener('click', () => goPage(pageIdx - 1));
+$('#pl-next').addEventListener('click', () => (pageIdx === pages.length - 1 ? closeSkill() : goPage(pageIdx + 1)));
+$('#pl-close').addEventListener('click', closeSkill);
+$('#player').addEventListener('click', (e) => {
+  const jump = e.target.closest('[data-jump]');
+  if (jump) return goPage(Number(jump.dataset.jump));
+  const part = e.target.closest('[data-part]');
+  if (part) {
+    const k = part.dataset.part;
+    partsReady.has(k) ? partsReady.delete(k) : partsReady.add(k);
+    part.classList.toggle('ready', partsReady.has(k));
+    store.set(`parts-${playing.id}`, [...partsReady]);
+    buzz(partsReady.has(k) ? 10 : 4);
+    updateReady();
+    return;
+  }
+  if (e.target.closest('#pl-master')) {
+    const id = playing.id;
+    const on = !mastered.includes(id);
+    mastered = on ? [...mastered, id] : mastered.filter((x) => x !== id);
+    store.set('mastered', mastered);
+    const btn = $('#pl-master');
+    btn.classList.toggle('on', on);
+    btn.textContent = on ? '✓ Mastered' : 'I’ve practised this';
+    $('#pl-medal').textContent = on ? '🏅' : '🎯';
+    if (on) {
+      $('#pl-medal').classList.remove('pop');
+      void $('#pl-medal').offsetWidth;
+      $('#pl-medal').classList.add('pop');
+      petalRain();
+      toast(`${playing.title}: mastered 🏅`);
+    }
+    return;
+  }
+  const askBtn = e.target.closest('[data-skill-ask]');
+  if (askBtn) {
+    const s = skillById[askBtn.dataset.skillAsk];
+    $('#player').hidden = true;
+    playing = null;
+    newThread();
+    ask(`I'm learning "${s.title}" (${s.sub}). What are the most common mistakes, and how do I adapt it to my home?`);
+  }
+});
+addEventListener('keydown', (e) => {
+  if ($('#player').hidden) return;
+  if (e.key === 'ArrowRight') goPage(pageIdx + 1);
+  if (e.key === 'ArrowLeft') goPage(pageIdx - 1);
+  if (e.key === 'Escape') closeSkill();
+});
+document.addEventListener('click', (e) => {
+  const card = e.target.closest('[data-skill]');
+  if (card) openSkill(card.dataset.skill, card);
+});
+setGuideMode(guideMode, false);
+
 /* ---------- Pillars deck ---------- */
 $('#letters').innerHTML = lettersHtml();
 $('#deck').innerHTML = principles
@@ -1192,6 +1499,7 @@ function renderAll() {
   renderRemedies();
   renderTimeline();
   renderGuide();
+  renderSkills();
   renderChat();
 }
 renderAll();

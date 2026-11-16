@@ -122,9 +122,15 @@
     <!-- ============ GUIDE ============ -->
     <section id="tab-guide" class="tab">
       <header class="page-head">
-        <h1>Home Apothecary</h1>
-        <p>A recipe book of balms, teas, syrups and tonics to make at home, each with dosage and safety notes.</p>
+        <h1 id="guide-title">Home Apothecary</h1>
+        <p id="guide-sub">A recipe book of balms, teas, syrups and tonics to make at home, each with dosage and safety notes.</p>
       </header>
+      <div class="mode-switch" id="mode-switch" role="tablist">
+        <span class="mode-thumb" aria-hidden="true"></span>
+        <button role="tab" class="active" data-mode="recipes">❧ Apothecary recipes</button>
+        <button role="tab" data-mode="skills">⚒ Lost skills</button>
+      </div>
+      <div id="guide-recipes">
       <div class="search-wrap">
         <input id="guide-search" type="search" placeholder="Search recipes: cough, balm, sleep, ginger…" />
       </div>
@@ -134,6 +140,15 @@
         <div class="shelf-row" id="basics"></div>
       </section>
       <div id="guide-index" class="guide-index"></div>
+      </div>
+
+      <div id="guide-skills" hidden>
+        <section class="readiness" id="readiness"></section>
+        <div class="search-wrap"><input id="skill-search" type="search" placeholder="Search 51 skills: water, fire, CPR, knots…" /></div>
+        <div class="chapter-rail" id="chapter-rail"></div>
+        <div class="skill-list" id="skill-list"></div>
+        <p class="disclaimer" id="manual-foot"></p>
+      </div>
     </section>
 
     <!-- ============ PILLARS ============ -->
@@ -169,6 +184,22 @@
   <div class="rsheet gsheet" id="gsheet" hidden>
     <div class="rsheet-backdrop" data-close></div>
     <article class="gpage" id="gpage" role="dialog" aria-modal="true" aria-labelledby="gp-title"></article>
+  </div>
+
+  <!-- Lost skills: build mode -->
+  <div class="player" id="player" hidden role="dialog" aria-modal="true" aria-labelledby="pl-title">
+    <header class="pl-top">
+      <button class="pl-close" id="pl-close" aria-label="Close">✕</button>
+      <span class="pl-num" id="pl-num"></span>
+      <strong class="pl-title" id="pl-title"></strong>
+      <span class="pl-count" id="pl-count"></span>
+    </header>
+    <nav class="pl-progress" id="pl-progress" aria-label="Pages"></nav>
+    <div class="pl-track" id="pl-track"></div>
+    <footer class="pl-foot">
+      <button class="pl-btn" id="pl-prev">← Back</button>
+      <button class="pl-btn primary-btn" id="pl-next">Next →</button>
+    </footer>
   </div>
 
   <!-- Advisor journal -->
