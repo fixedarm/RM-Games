@@ -5,6 +5,7 @@ import { claims } from './data/claims.js';
 import { KINDS, ZONES, kindOf, zonesOf, stepsOf } from './data/taxonomy.js';
 import { GUIDE_CATS, BASICS, recipes } from './data/guide.js';
 import manual from './data/manual.json';
+import { MANUAL_IMG, EMERGENCY_NUMBER } from './data/field.js';
 import { checkRedFlags } from './data/redflags.js';
 import { goals, goalById } from './data/goals.js';
 import { DEFAULT_MODEL, toGeminiHistory, callGemini, goalContext } from './advisor-core.js';
@@ -1145,10 +1146,14 @@ addEventListener('keydown', (e) => {
 // Shared arrow/pattern definitions used by every line drawing.
 document.body.insertAdjacentHTML('afterbegin', `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${manual.sprite}</svg>`);
 
+// Chapters in triage order: the most urgent knowledge first.
 const CH_STYLE = {
-  1: { icon: '🏠', color: '#3b8fc4' }, 2: { icon: '🥫', color: '#d9673f' }, 3: { icon: '🔥', color: '#c9932e' }, 4: { icon: '⛑️', color: '#c0352b' },
-  5: { icon: '🧰', color: '#6b6fc4' }, 6: { icon: '🌱', color: '#2e8a57' }, 7: { icon: '🚨', color: '#d94b4b' }, 8: { icon: '🤝', color: '#c4669a' },
+  emergency: { icon: '🚨', color: '#d33a2c' }, firstaid: { icon: '⛑️', color: '#0f8a7e' }, disaster: { icon: '🌊', color: '#c77d0a' },
+  field: { icon: '🔥', color: '#a8641e' }, home: { icon: '🏠', color: '#3b8fc4' }, food: { icon: '🥫', color: '#d9673f' },
+  repair: { icon: '🧰', color: '#6b6fc4' }, garden: { icon: '🌱', color: '#2e8a57' }, community: { icon: '🤝', color: '#c4669a' },
 };
+const chapterNo = (id) => manual.chapters.findIndex((c) => c.id === id) + 1;
+const chapterTitle = (id) => manual.chapters.find((c) => c.id === id).title;
 const skillById = Object.fromEntries(manual.skills.map((s) => [s.id, s]));
 let mastered = store.get('mastered', []);
 let skillPos = store.get('skillPos', {});
@@ -1165,7 +1170,7 @@ function setGuideMode(mode, animate = true) {
     $('#guide-skills').hidden = mode !== 'skills';
     $('#guide-title').textContent = mode === 'skills' ? 'Lost Skills' : 'Home Apothecary';
     $('#guide-sub').textContent = mode === 'skills'
-      ? `An illustrated assembly manual: ${manual.skills.length} hands-on skills for water, food, fire, first aid and hard times, one step at a time.`
+      ? `An illustrated field manual: ${manual.skills.length} hands-on skills, most urgent first. Emergencies, first aid, water, food, fire and hard times, one step at a time.`
       : 'A recipe book of balms, teas, syrups and tonics to make at home, each with dosage and safety notes.';
   };
   animate ? transition(apply, 'fade') : apply();
@@ -1211,7 +1216,7 @@ function renderReadiness() {
 
 function renderChapterRail() {
   const card = (id, title, icon, color, d, n) => `<button class="ch-card ${skillChapter === id ? 'on' : ''}" data-ch="${id}" style="--c:${color}">
-      <span class="ch-num">${id === 'all' ? '★' : id}</span><span class="ch-ico">${icon}</span>
+      <span class="ch-num">${id === 'all' ? '★' : chapterNo(id)}</span><span class="ch-ico">${icon}</span>
       <strong>${title}</strong>
       <span class="ch-meta">${d}/${n} mastered</span>
       <span class="ch-bar"><i style="width:${n ? (d / n) * 100 : 0}%"></i></span>
@@ -1231,9 +1236,9 @@ function skillCard(s, i) {
   const pos = skillPos[s.id];
   const ch = CH_STYLE[s.chapter];
   return `<button class="sk-card stagger ${done ? 'done' : ''}" data-skill="${s.id}" style="--c:${ch.color};--d:${Math.min(i, 14) * 28}ms">
-    <span class="sk-thumb">${s.steps[0].svg}</span>
+    <span class="sk-thumb"><img src="${MANUAL_IMG[s.id]}" alt="" loading="lazy" decoding="async" /></span>
     <span class="sk-body">
-      <span class="sk-head"><span class="sk-num">${s.num}</span><span class="sk-ch">${ch.icon} ${manual.chapters.find((c) => c.id === s.chapter).title}</span></span>
+      <span class="sk-head"><span class="sk-num">${s.num}</span><span class="sk-ch">${ch.icon} ${chapterTitle(s.chapter)}</span></span>
       <strong>${s.title}</strong>
       <span class="sk-sub">${s.sub}</span>
       <span class="sk-meta">${s.steps.length} steps · ${s.parts.length} parts${s.tools.length ? ` · ${s.tools.length} tools` : ''}</span>
@@ -1285,30 +1290,69 @@ function noteCard(n) {
   return `<div class="pl-note ${kind}"><span>${icon}</span><div><b>${n.type}</b><p>${n.text}</p></div></div>`;
 }
 
+function toolPage(s) {
+  if (s.utility === 'cpr') return `<section class="pl-page pl-tool">
+      <h2>CPR pacer</h2>
+      <p class="pl-hint">Push on every beat: 105 a minute, 5–6 cm deep. The counter tells you when to give 2 breaths.</p>
+      <button class="cpr-heart" id="cpr-heart" aria-label="Start or stop the CPR pacer"><span id="cpr-count">START</span><small id="cpr-cue">Tap to begin</small></button>
+      <label class="cpr-opt"><input type="checkbox" id="cpr-hands-only" /> Hands-only CPR (no breaths)</label>
+      <p class="pl-hint">Keep going until help or an AED takes over. Swap rescuers every 2 minutes.</p>
+    </section>`;
+  if (s.utility === 'burn_timer') return `<section class="pl-page pl-tool">
+      <h2>20-minute cooling timer</h2>
+      <p class="pl-hint">Cool the burn under cool running water until the ring empties.</p>
+      <div class="burn-ring">${ring(1200, 1200, 220, 14)}<div><strong id="burn-time">20:00</strong><small id="burn-state">Ready</small></div></div>
+      <div class="tool-row"><button class="pl-btn primary-btn" id="burn-go">Start</button><button class="pl-btn" id="burn-reset">Reset</button></div>
+    </section>`;
+  if (s.utility === 'rain_calc') return `<section class="pl-page pl-tool">
+      <h2>Roof yield calculator</h2>
+      <div class="calc-grid">
+        <label>Roof length (m)<input type="number" id="rc-len" value="10" min="1" inputmode="decimal" /></label>
+        <label>Roof width (m)<input type="number" id="rc-wid" value="5" min="1" inputmode="decimal" /></label>
+        <label>Rainfall (mm)<input type="number" id="rc-rain" value="10" min="1" inputmode="decimal" /></label>
+      </div>
+      <div class="calc-out" id="rc-out"></div>
+    </section>`;
+  if (s.utility === 'salt_calc') return `<section class="pl-page pl-tool">
+      <h2>2.5% salt calculator</h2>
+      <div class="calc-grid one"><label>Cut vegetables (g)<input type="number" id="salt-veg" value="1000" min="50" step="50" inputmode="decimal" /></label></div>
+      <div class="calc-out" id="salt-out"></div>
+    </section>`;
+  return '';
+}
+
 function buildPages(s) {
-  const ch = manual.chapters.find((c) => c.id === s.chapter);
   const list = [];
+  const tool = toolPage(s);
+  const guidePage = s.guides.length
+    ? `<section class="pl-page pl-guides"><h2>Visual guide</h2><p class="pl-hint">Tap a picture to enlarge it. Study them first, then follow the steps.</p>
+        ${s.guides.map((g) => `<figure><figcaption>${g.title}</figcaption><img src="${MANUAL_IMG[g.img]}" alt="${g.title}" loading="lazy" width="${g.w}" height="${g.h}" /></figure>`).join('')}</section>`
+    : '';
+  // Steps come after the cover, the tool, the visual guide and the parts check.
+  const firstStep = 1 + (tool ? 1 : 0) + (guidePage ? 1 : 0) + 1;
   list.push({ label: 'Cover', html: `<section class="pl-page pl-cover">
-      <span class="pl-chapter">${CH_STYLE[s.chapter].icon} Chapter ${s.chapter} · ${ch.title}</span>
-      <span class="pl-bignum">${s.num}</span>
+      <figure class="pl-hero"><img src="${MANUAL_IMG[s.id]}" alt="${s.title}" /><span class="pl-bignum">${s.num}</span></figure>
+      <span class="pl-chapter">${CH_STYLE[s.chapter].icon} ${chapterTitle(s.chapter)}</span>
       <h2>${s.title}</h2>
       <p class="pl-sub">${s.sub}</p>
       <blockquote class="pl-why">${s.why}</blockquote>
-      <div class="pl-stats"><span><b>${s.steps.length}</b>steps</span><span><b>${s.parts.length}</b>parts</span><span><b>${s.tools.length}</b>tools</span></div>
+      <div class="pl-stats"><span><b>${s.steps.length}</b>steps</span><span><b>${s.parts.length}</b>you need</span><span><b>${s.tools.length}</b>tools</span></div>
       <h3>Contents</h3>
-      <ol class="pl-toc">${s.steps.map((st, i) => `<li><button data-jump="${i + 2}"><span>${st.n}</span>${st.title}</button></li>`).join('')}</ol>
+      <ol class="pl-toc">${s.steps.map((st, i) => `<li><button data-jump="${firstStep + i}"><span>${st.n}</span>${st.title}</button></li>`).join('')}</ol>
     </section>` });
-  const partItem = (p, i, kind) => `<button class="pl-part ${partsReady.has(`${kind}${i}`) ? 'ready' : ''}" data-part="${kind}${i}">
-      ${p.q ? `<span class="pl-q">${p.q}</span>` : ''}<span class="pl-part-art">${p.svg}</span><span class="pl-part-name">${p.name}</span><i class="pl-tick">✓</i></button>`;
+  if (tool) list.push({ label: 'Tool', html: tool });
+  if (guidePage) list.push({ label: 'Visual guide', html: guidePage });
+  const partItem = (p, i, kind) => `<button class="pl-part ${p.svg ? '' : 'plain'} ${partsReady.has(`${kind}${i}`) ? 'ready' : ''}" data-part="${kind}${i}">
+      ${p.q ? `<span class="pl-q">${p.q}</span>` : ''}${p.svg ? `<span class="pl-part-art">${p.svg}</span>` : ''}<span class="pl-part-name">${p.name}</span><i class="pl-tick">✓</i></button>`;
   list.push({ label: 'Parts', html: `<section class="pl-page pl-parts">
-      <div class="pl-parts-head"><h2>Gather your parts</h2><span class="pl-ready" id="pl-ready"></span></div>
+      <div class="pl-parts-head"><h2>Gather what you need</h2><span class="pl-ready" id="pl-ready"></span></div>
       <p class="pl-hint">Tap each item as you lay it out.</p>
       <div class="pl-part-grid">${s.parts.map((p, i) => partItem(p, i, 'p')).join('')}</div>
-      ${s.tools.length ? `<h3>Tools</h3><div class="pl-part-grid tools">${s.tools.map((p, i) => partItem(p, i, 't')).join('')}</div>` : ''}
+      ${s.tools.length ? `<h3>Tools & contacts</h3><div class="pl-part-grid tools">${s.tools.map((p, i) => partItem(p, i, 't')).join('')}</div>` : ''}
     </section>` });
   s.steps.forEach((st, i) =>
-    list.push({ label: `Step ${st.n}`, html: `<section class="pl-page pl-step">
-        <div class="pl-canvas"><span class="pl-stepnum">${st.n}</span>${st.svg}</div>
+    list.push({ label: `Step ${st.n}`, html: `<section class="pl-page pl-step ${st.svg ? '' : 'text-only'}">
+        ${st.svg ? `<div class="pl-canvas"><span class="pl-stepnum">${st.n}</span>${st.svg}</div>` : `<div class="pl-textnum"><span>${st.n}</span><small>of ${s.steps.length}</small></div>`}
         <span class="pl-of">Step ${i + 1} of ${s.steps.length}</span>
         <h2>${st.title}</h2>
         <p>${st.text}</p>
@@ -1322,14 +1366,179 @@ function buildPages(s) {
       <button class="pl-master ${mastered.includes(s.id) ? 'on' : ''}" id="pl-master">${mastered.includes(s.id) ? '✓ Mastered' : 'I’ve practised this'}</button>
       <button class="pl-ask" data-skill-ask="${s.id}">Ask the advisor about this skill</button>
     </section>` });
+  list.firstStep = firstStep;
   return list;
 }
 
-function openSkill(id, from) {
+/* Interactive tools inside build mode */
+let audioCtx = null;
+let wakeLock = null;
+const keepAwake = async (on) => {
+  try {
+    if (on && !wakeLock) wakeLock = await navigator.wakeLock?.request('screen');
+    if (!on && wakeLock) (await wakeLock.release(), (wakeLock = null));
+  } catch {
+    /* not available here */
+  }
+};
+function click(freq = 660) {
+  try {
+    audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.08);
+  } catch {
+    /* audio unavailable */
+  }
+}
+let cprTimer = null;
+let cprN = 0;
+let breathUntil = 0;
+function cprStop() {
+  clearInterval(cprTimer);
+  cprTimer = null;
+  const heart = $('#cpr-heart');
+  if (heart) {
+    heart.classList.remove('on', 'breathe');
+    $('#cpr-count').textContent = 'START';
+    $('#cpr-cue').textContent = 'Tap to begin';
+  }
+  keepAwake(false);
+}
+function cprStart() {
+  cprN = 0;
+  breathUntil = 0;
+  $('#cpr-heart').classList.add('on');
+  keepAwake(true);
+  cprTimer = setInterval(() => {
+    const heart = $('#cpr-heart');
+    if (!heart) return cprStop();
+    const now = Date.now();
+    if (now < breathUntil) return;
+    heart.classList.remove('breathe');
+    cprN = (cprN % 30) + 1;
+    click(cprN === 30 ? 880 : 660);
+    navigator.vibrate?.(40);
+    heart.classList.remove('beat');
+    void heart.offsetWidth;
+    heart.classList.add('beat');
+    $('#cpr-count').textContent = cprN;
+    $('#cpr-cue').textContent = 'Push hard & fast';
+    if (cprN === 30 && !$('#cpr-hands-only').checked) {
+      breathUntil = now + 5000;
+      setTimeout(() => {
+        if (!cprTimer) return;
+        heart.classList.add('breathe');
+        $('#cpr-count').textContent = '2';
+        $('#cpr-cue').textContent = 'Give 2 breaths';
+        click(440);
+      }, 400);
+    }
+  }, Math.round(60000 / 105));
+}
+let burnTimer = null;
+let burnLeft = 1200;
+function burnRender() {
+  const t = $('#burn-time');
+  if (!t) return;
+  t.textContent = `${String(Math.floor(burnLeft / 60)).padStart(2, '0')}:${String(burnLeft % 60).padStart(2, '0')}`;
+  const circle = document.querySelector('.burn-ring .ring-fill');
+  const c = 2 * Math.PI * ((220 - 14) / 2);
+  circle?.setAttribute('stroke-dasharray', `${(burnLeft / 1200) * c} ${c}`);
+}
+function burnStop(reset) {
+  clearInterval(burnTimer);
+  burnTimer = null;
+  if (reset) burnLeft = 1200;
+  if ($('#burn-go')) $('#burn-go').textContent = burnLeft === 0 ? 'Done ✓' : burnLeft === 1200 ? 'Start' : 'Resume';
+  if ($('#burn-state')) $('#burn-state').textContent = burnLeft === 0 ? 'Cooling complete' : burnLeft === 1200 ? 'Ready' : 'Paused';
+  burnRender();
+  keepAwake(false);
+}
+function stopTools() {
+  cprStop();
+  burnStop(true);
+}
+function updateCalcs() {
+  if ($('#rc-out')) {
+    const l = Math.max(0, +$('#rc-len').value || 0);
+    const w = Math.max(0, +$('#rc-wid').value || 0);
+    const r = Math.max(0, +$('#rc-rain').value || 0);
+    const area = +(l * w).toFixed(1);
+    const litres = Math.round(area * r * 0.8);
+    $('#rc-out').innerHTML = `<div><b>${area}</b><span>m² roof</span></div><div><b>${litres.toLocaleString()}</b><span>litres collected</span></div>
+      <div><b>${Math.round(area)}</b><span>L first-flush pipe</span></div><div><b>${(litres / 200).toFixed(1)}</b><span>× 200 L drums</span></div>`;
+  }
+  if ($('#salt-out')) {
+    const g = Math.max(0, +$('#salt-veg').value || 0);
+    $('#salt-out').innerHTML = `<div><b>${Math.round(g * 0.025)} g</b><span>salt (2.5%)</span></div><div><b>${Math.round(g * 0.02)}–${Math.round(g * 0.03)} g</b><span>safe range</span></div>`;
+  }
+}
+$('#player').addEventListener('input', (e) => e.target.matches('.calc-grid input') && updateCalcs());
+$('#player').addEventListener('click', (e) => {
+  const fig = e.target.closest('.pl-guides figure');
+  if (fig) {
+    fig.classList.toggle('zoomed');
+    if (fig.classList.contains('zoomed')) toast('Swipe sideways inside the picture · tap to shrink');
+    return;
+  }
+  if (e.target.closest('#cpr-heart')) {
+    cprTimer ? cprStop() : cprStart();
+    return;
+  }
+  if (e.target.closest('#burn-go')) {
+    if (burnTimer) return burnStop(false);
+    if (burnLeft === 0) burnLeft = 1200;
+    keepAwake(true);
+    $('#burn-go').textContent = 'Pause';
+    $('#burn-state').textContent = 'Cooling…';
+    burnTimer = setInterval(() => {
+      burnLeft = Math.max(0, burnLeft - 1);
+      burnRender();
+      if (burnLeft === 0) {
+        burnStop(false);
+        navigator.vibrate?.([300, 150, 300]);
+        click(880);
+        toast('20 minutes done: cover with cling film');
+      }
+    }, 1000);
+  }
+  if (e.target.closest('#burn-reset')) burnStop(true);
+});
+
+/* SOS: straight to the life-saving steps */
+function openSos() {
+  const list = manual.skills.filter((s) => s.chapter === 'emergency');
+  $('#sos-list').innerHTML = list
+    .map((s) => `<button class="sos-btn" data-sos="${s.id}"><img src="${MANUAL_IMG[s.id]}" alt="" /><span><b>${s.title}</b><small>${s.sub}</small></span><i>→</i></button>`)
+    .join('');
+  transition(() => ($('#sos').hidden = false), 'sheet');
+  buzz([30, 60, 30]);
+}
+$('#open-sos').addEventListener('click', openSos);
+$('#sos').addEventListener('click', (e) => {
+  if (e.target.closest('[data-sos-close]')) return transition(() => ($('#sos').hidden = true), 'sheet');
+  const b = e.target.closest('[data-sos]');
+  if (b) {
+    $('#sos').hidden = true;
+    openSkill(b.dataset.sos, null, 'steps');
+  }
+});
+$('#sos-number').textContent = EMERGENCY_NUMBER;
+$('#sos-call').href = `tel:${EMERGENCY_NUMBER}`;
+
+function openSkill(id, from, startAt) {
   const s = skillById[id];
   playing = s;
   partsReady = new Set(store.get(`parts-${id}`, []));
   pages = buildPages(s);
+  // SOS opens straight at step 1 (or the CPR pacer); otherwise resume where you left off.
+  const start = startAt === 'steps' ? (s.utility === 'cpr' ? 1 : pages.firstStep) : Math.min(skillPos[id] || 0, pages.length - 1);
   if (from) from.style.viewTransitionName = 'skill-hero';
   transition(() => {
     if (from) from.style.viewTransitionName = '';
@@ -1341,12 +1550,15 @@ function openSkill(id, from) {
     $('#player').hidden = false;
     $('#player').style.viewTransitionName = 'skill-hero';
     updateReady();
+    updateCalcs();
+    // Position the track only after the new pages exist, so it never keeps the last skill's scroll.
+    $('#pl-track').scrollLeft = start * $('#pl-track').clientWidth;
+    setPage(start);
   }, 'morph')?.finished?.finally(() => ($('#player').style.viewTransitionName = ''));
-  const start = Math.min(skillPos[id] || 0, pages.length - 1);
-  requestAnimationFrame(() => goPage(start, false));
   buzz(8);
 }
 function closeSkill() {
+  stopTools();
   transition(() => ($('#player').hidden = true), 'sheet');
   playing = null;
   renderSkills();
@@ -1429,6 +1641,7 @@ $('#player').addEventListener('click', (e) => {
   const askBtn = e.target.closest('[data-skill-ask]');
   if (askBtn) {
     const s = skillById[askBtn.dataset.skillAsk];
+    stopTools();
     $('#player').hidden = true;
     playing = null;
     newThread();

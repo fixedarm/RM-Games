@@ -143,6 +143,7 @@
       </div>
 
       <div id="guide-skills" hidden>
+        <button class="sos-bar" id="open-sos"><span class="sos-dot"></span><b>SOS</b><span>Emergency? CPR, choking, bleeding, snakebite</span><i>→</i></button>
         <section class="readiness" id="readiness"></section>
         <div class="search-wrap"><input id="skill-search" type="search" placeholder="Search 51 skills: water, fire, CPR, knots…" /></div>
         <div class="chapter-rail" id="chapter-rail"></div>
@@ -200,6 +201,17 @@
       <button class="pl-btn" id="pl-prev">← Back</button>
       <button class="pl-btn primary-btn" id="pl-next">Next →</button>
     </footer>
+  </div>
+
+  <!-- SOS emergency sheet -->
+  <div class="sos" id="sos" hidden role="dialog" aria-modal="true" aria-labelledby="sos-title">
+    <div class="sos-panel">
+      <header><span class="sos-dot"></span><h2 id="sos-title">Emergency</h2><button class="round-btn" data-sos-close aria-label="Close">✕</button></header>
+      <a class="sos-call" id="sos-call" href="#"><span>📞 Call</span><b id="sos-number"></b></a>
+      <p class="sos-note">Malaysia: 999 (112 also works from mobiles). Elsewhere, use your local emergency number. Put the phone on speaker and keep it beside you.</p>
+      <div class="sos-list" id="sos-list"></div>
+      <p class="sos-note">Each opens straight at the first step.</p>
+    </div>
   </div>
 
   <!-- Advisor journal -->
