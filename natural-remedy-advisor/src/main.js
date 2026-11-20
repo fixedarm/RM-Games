@@ -5,7 +5,7 @@ import { claims } from './data/claims.js';
 import { KINDS, ZONES, kindOf, zonesOf, stepsOf } from './data/taxonomy.js';
 import { GUIDE_CATS, BASICS, recipes } from './data/guide.js';
 import manual from './data/manual.json';
-import { MANUAL_IMG, EMERGENCY_NUMBER } from './data/field.js';
+import { MANUAL_IMG, STEP_IMG, EMERGENCY_NUMBER } from './data/field.js';
 import { checkRedFlags } from './data/redflags.js';
 import { goals, goalById } from './data/goals.js';
 import { DEFAULT_MODEL, toGeminiHistory, callGemini, goalContext } from './advisor-core.js';
@@ -1366,11 +1366,15 @@ function buildPages(s) {
   list.push({ label: 'Steps', html: `<section class="pl-page pl-steps">
       <div class="pl-parts-head"><h2>Step by step</h2><span class="pl-ready" id="pl-steps-done">${stepsHeader(s)}</span></div>
       <p class="pl-hint">Tap a step when you've done it.</p>
-      <ol class="pl-steplist">${s.steps.map((st, i) => `<li><button class="pl-stepcard ${st.svg ? 'has-art' : ''} ${stepsDone.has(i) ? 'done' : ''}" data-step="${i}">
+      <ol class="pl-steplist">${s.steps.map((st, i) => {
+        const pic = STEP_IMG[`${s.id}-${String(i + 1).padStart(2, '0')}`];
+        const art = pic ? `<span class="pl-steppic"><img src="${pic}" alt="${st.title}" loading="lazy" decoding="async" /></span>` : st.svg ? `<span class="pl-stepart">${st.svg}</span>` : '';
+        return `<li><button class="pl-stepcard ${pic ? 'has-pic' : st.svg ? 'has-art' : ''} ${stepsDone.has(i) ? 'done' : ''}" data-step="${i}">
+          ${art}
           <span class="pl-stepbadge">${st.n}</span>
           <span class="pl-stepbody"><strong>${st.title}</strong><span>${st.text}</span></span>
-          ${st.svg ? `<span class="pl-stepart">${st.svg}</span>` : ''}
-        </button></li>`).join('')}</ol>
+        </button></li>`;
+      }).join('')}</ol>
     </section>` });
   list.push({ label: 'Finish', html: `<section class="pl-page pl-finish">
       <h2>Stay safe</h2>

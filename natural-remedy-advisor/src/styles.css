@@ -1004,3 +1004,12 @@ mark { background: color-mix(in srgb, var(--gold) 55%, transparent); color: inhe
 @media (max-width: 420px) { .pl-stepcard.has-art .pl-stepart { width: 100%; max-width: 250px; justify-self: center; } }
 .cpr-box .cpr-heart span { font-size: clamp(1.6rem, 9vw, 2.4rem); }
 .cpr-heart.on span { font-size: 3rem; }
+
+/* Step illustrations: picture on top, number and words below */
+.pl-stepcard.has-pic { grid-template-columns: auto minmax(0, 1fr); padding: 0 0 12px; overflow: hidden; }
+.pl-steppic { grid-column: 1 / -1; position: relative; display: block; aspect-ratio: 3 / 2; background: #eee; }
+.pl-steppic img { display: block; width: 100%; height: 100%; object-fit: cover; transition: filter .3s; }
+.pl-stepcard.has-pic .pl-stepbadge { margin-left: 12px; margin-top: -26px; position: relative; z-index: 1; box-shadow: 0 0 0 3px var(--paper); }
+.pl-stepcard.has-pic .pl-stepbody { padding-right: 12px; }
+.pl-stepcard.has-pic.done .pl-steppic img { filter: saturate(.35) brightness(1.05); }
+.pl-stepcard.has-pic.done .pl-steppic::after { content: '✓ Done'; position: absolute; right: 10px; top: 10px; padding: 4px 10px; border-radius: 999px; background: #2e8a57; color: #fff; font-weight: 800; font-size: .78rem; }

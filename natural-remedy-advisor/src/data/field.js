@@ -2,3 +2,7 @@
 const imgs = import.meta.glob('../assets/manual/*.webp', { eager: true, query: '?url', import: 'default' });
 export const MANUAL_IMG = Object.fromEntries(Object.entries(imgs).map(([path, url]) => [path.split('/').pop().replace('.webp', ''), url]));
 export const EMERGENCY_NUMBER = '999';
+
+// One illustration per step, named <skill>-<step number>, e.g. cpr-06.
+const stepImgs = import.meta.glob('../assets/steps/*.webp', { eager: true, query: '?url', import: 'default' });
+export const STEP_IMG = Object.fromEntries(Object.entries(stepImgs).map(([path, url]) => [path.split('/').pop().replace('.webp', ''), url]));
