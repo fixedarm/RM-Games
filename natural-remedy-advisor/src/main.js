@@ -4,6 +4,7 @@ import { remedies, EVIDENCE } from './data/remedies.js';
 import { claims } from './data/claims.js';
 import { KINDS, ZONES, kindOf, zonesOf, stepsOf } from './data/taxonomy.js';
 import { GUIDE_CATS, BASICS, recipes } from './data/guide.js';
+import { RECIPE_USES } from './data/recipe-uses.js';
 import manual from './data/manual.json';
 import { MANUAL_IMG, STEP_IMG, EMERGENCY_NUMBER } from './data/field.js';
 import { checkRedFlags } from './data/redflags.js';
@@ -1006,6 +1007,20 @@ function vesselSvg(kind, color) {
   return `<svg viewBox="0 0 120 110" class="vessel" aria-hidden="true">${shapes[kind]}</svg>`;
 }
 
+const usesOf = (r) => RECIPE_USES[r.id] || { good: r.tagline, remedy: r.uses };
+let openChapters = new Set(store.get('openChapters', []));
+// Library remedies that share a complaint with this recipe.
+function relatedRemedies(r) {
+  const words = usesOf(r).remedy.join(' ').toLowerCase().replace(/\(.*?\)/g, '').split(/[^a-z]+/).filter((w) => w.length > 3 && !['with', 'your', 'when', 'after', 'support', 'health', 'doctor'].includes(w));
+  if (!words.length) return [];
+  return remedies
+    .map((x) => [x, words.filter((w) => x.for.join(' ').toLowerCase().includes(w)).length])
+    .filter(([, n]) => n > 0)
+    .sort((a, b) => b[1] - a[1] || ({ strong: 0, some: 1, traditional: 2 }[a[0].evidence] - { strong: 0, some: 1, traditional: 2 }[b[0].evidence]))
+    .slice(0, 4)
+    .map(([x]) => x);
+}
+
 function recipeCard(r, i = 0) {
   const c = catById[r.cat];
   const saved = savedRecipes.includes(r.id);
@@ -1014,6 +1029,7 @@ function recipeCard(r, i = 0) {
     <span class="rcard-body">
       <strong>${r.name}</strong>
       <span class="rcard-tag">${r.tagline}</span>
+      ${usesOf(r).remedy.length ? `<span class="rcard-for"><b>For</b> ${usesOf(r).remedy.slice(0, 3).join(' · ')}</span>` : '<span class="rcard-for food">Everyday food</span>'}
       <span class="rcard-meta">⏱ ${r.time}</span>
     </span>
   </button>`;
@@ -1025,7 +1041,7 @@ function renderGuide() {
     .map((c) => `<button class="chip ${guideCat === c.id ? 'active' : ''}" data-gcat="${c.id}">${c.label}</button>`)
     .join('');
   const list = recipes.filter((r) => {
-    if (q) return `${r.name} ${r.tagline} ${r.uses.join(' ')} ${r.ingredients.map((x) => x[1]).join(' ')}`.toLowerCase().includes(q);
+    if (q) return `${r.name} ${r.tagline} ${r.uses.join(' ')} ${usesOf(r).remedy.join(' ')} ${usesOf(r).good} ${r.ingredients.map((x) => x[1]).join(' ')}`.toLowerCase().includes(q);
     if (guideCat === 'saved') return savedRecipes.includes(r.id);
     return guideCat === 'all' || r.cat === guideCat;
   });
@@ -1034,14 +1050,37 @@ function renderGuide() {
     $('#guide-index').innerHTML = `<div class="empty"><span>❧</span><p>${guideCat === 'saved' && !q ? 'Tap ☆ Save on a recipe to keep it here.' : 'No recipe matches.'}</p></div>`;
     return;
   }
-  // Grouped into chapters, like a recipe book.
+  // Grouped into collapsible chapters, like a recipe book. Searching or picking one chapter opens it.
   const groups = GUIDE_CATS.map((c) => [c, list.filter((r) => r.cat === c.id)]).filter(([, rs]) => rs.length);
+  const forceOpen = Boolean(q) || guideCat !== 'all';
   let n = 0;
-  $('#guide-index').innerHTML = groups
-    .map(([c, rs]) => `<section class="chapter"><h2 class="chapter-title" style="--c:${c.color}"><span>${c.label}</span><small>${rs.length}</small></h2>
-      <div class="grid">${rs.map((r) => recipeCard(r, n++)).join('')}</div></section>`)
+  const allOpen = groups.every(([c]) => openChapters.has(c.id));
+  $('#guide-index').innerHTML = (forceOpen ? '' : `<div class="chapter-tools"><button class="link-btn" data-chapters="${allOpen ? 'close' : 'open'}">${allOpen ? '− Collapse all' : '+ Expand all'}</button></div>`) + groups
+    .map(([c, rs]) => {
+      const covers = [...new Set(rs.flatMap((r) => usesOf(r).remedy.map((x) => x.replace(/\s*\(.*?\)/, ''))))].slice(0, 6);
+      return `<details class="chapter" data-chapter="${c.id}" ${forceOpen || openChapters.has(c.id) ? 'open' : ''}>
+        <summary class="chapter-title" style="--c:${c.color}"><span>${c.label}</span><small>${rs.length}</small><i class="chev" aria-hidden="true"></i>
+          ${covers.length ? `<em class="chapter-covers">${covers.join(' · ')}</em>` : '<em class="chapter-covers">Everyday whole foods</em>'}</summary>
+        <div class="grid">${rs.map((r) => recipeCard(r, n++)).join('')}</div></details>`;
+    })
     .join('');
 }
+$('#guide-index').addEventListener('toggle', (e) => {
+  const d = e.target.closest?.('details[data-chapter]');
+  if (!d || $('#guide-search').value.trim() || guideCat !== 'all') return;
+  d.open ? openChapters.add(d.dataset.chapter) : openChapters.delete(d.dataset.chapter);
+  store.set('openChapters', [...openChapters]);
+  const btn = document.querySelector('[data-chapters]');
+  const all = [...document.querySelectorAll('details[data-chapter]')].every((x) => x.open);
+  if (btn) { btn.dataset.chapters = all ? 'close' : 'open'; btn.textContent = all ? '− Collapse all' : '+ Expand all'; }
+}, true);
+$('#guide-index').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-chapters]');
+  if (!b) return;
+  openChapters = new Set(b.dataset.chapters === 'open' ? GUIDE_CATS.map((c) => c.id) : []);
+  store.set('openChapters', [...openChapters]);
+  transition(renderGuide, 'fade');
+});
 $('#basics').innerHTML = BASICS.map((b) => `<button class="basic" data-basic="${b.id}"><span>${b.icon}</span><strong>${b.title}</strong><small>${b.text}</small></button>`).join('');
 $('#guide-search').addEventListener('input', renderGuide);
 $('#guide-cats').addEventListener('click', (e) => {
@@ -1063,6 +1102,15 @@ function openGuidePage(html, src) {
   }, 'morph');
   buzz(8);
 }
+function usesBox(r) {
+  const u = usesOf(r);
+  const rel = relatedRemedies(r);
+  return `<section class="gp-uses-box">
+      <div><h3>✓ Good for</h3><p>${u.good}</p></div>
+      <div><h3>✚ Used as a remedy for</h3>${u.remedy.length ? `<ul class="gp-ailments">${u.remedy.map((x) => `<li>${x}</li>`).join('')}</ul>` : '<p class="muted">Not a remedy: an everyday whole-food recipe.</p>'}</div>
+      ${rel.length ? `<div class="gp-related"><h3>Also in the remedy library</h3><div>${rel.map((x) => `<button class="chip" data-relrem="${remedies.indexOf(x)}">${x.name}</button>`).join('')}</div></div>` : ''}
+    </section>`;
+}
 function recipePage(r) {
   const c = catById[r.cat];
   const saved = savedRecipes.includes(r.id);
@@ -1077,6 +1125,7 @@ function recipePage(r) {
     </header>
     <div class="gp-paper" style="--c:${c.color}">
       <p class="gp-intro">${r.intro}</p>
+      ${usesBox(r)}
       <div class="gp-facts"><span><b>Makes</b>${r.makes}</span><span><b>Time</b>${r.time}</span><span><b>Keeps</b>${r.keeps}</span><span><b>Evidence</b>${EV_LABEL[r.evidence]}</span></div>
       <div class="gp-cols">
         <section class="gp-box gp-ingredients">
@@ -1091,7 +1140,6 @@ function recipePage(r) {
       ${r.notes ? `<section class="gp-box gp-notes"><h3>Notes</h3><p>${r.notes}</p></section>` : ''}
       <section class="gp-dosage"><h3>${['food', 'juice'].includes(r.cat) ? 'Serving' : 'Dosage'}</h3><p>${r.dosage}</p></section>
       <section class="gp-caution"><strong>⚠️ Safety</strong><p>${r.caution}</p></section>
-      <p class="gp-uses">Used for: ${r.uses.join(' · ')}</p>
       <div class="rs-actions">
         <button class="secondary" data-rsave="${r.id}">${saved ? '★ Saved' : '☆ Save'}</button>
         <button class="primary" data-rask="${r.id}">Ask the advisor about this</button>
@@ -1128,6 +1176,8 @@ document.addEventListener('click', (e) => {
 });
 $('#gsheet').addEventListener('click', (e) => {
   if (e.target.closest('[data-close]')) return closeGuidePage();
+  const rel = e.target.closest('[data-relrem]');
+  if (rel) { $('#gsheet').hidden = true; return openRemedy(Number(rel.dataset.relrem)); }
   const save = e.target.closest('[data-rsave]');
   if (save) {
     const id = save.dataset.rsave;
