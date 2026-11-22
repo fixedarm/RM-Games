@@ -781,6 +781,7 @@ function remedyTile(r, extra = '', delay = 0) {
 // Back-compat for the Today screen.
 const remedyCard = (r) => remedyTile(r, 'wide');
 
+let claimRisk = 'all';
 const RISK = { high: 'High risk if acted on', medium: 'Can cause harm', low: 'Mostly unproven' };
 function claimCard(c, i) {
   return `<article class="claim risk-${c.risk}" style="--d:${i * 25}ms">
@@ -812,10 +813,18 @@ function renderShelves() {
     `<section class="shelf claims-shelf">
       <div class="shelf-head"><h2>⚖️ Claims checked</h2><span>${claims.length}</span></div>
       <p class="claims-intro">Popular natural-health claims we checked against the evidence. We don't give instructions for these because acting on them can cause harm, so here is what the evidence says. You decide.</p>
-      <div class="claims">${claims.map(claimCard).join('')}</div>
+      <div class="claim-filter" role="group" aria-label="Filter claims">${[['all', `All ${claims.length}`], ...Object.entries(RISK).map(([k, v]) => [k, `${v} · ${claims.filter((c) => c.risk === k).length}`])]
+        .map(([k, v]) => `<button class="chip ${claimRisk === k ? 'active' : ''}" data-crisk="${k}">${v}</button>`).join('')}</div>
+      <div class="claims">${claims.filter((c) => claimRisk === 'all' || c.risk === claimRisk).map(claimCard).join('')}</div>
     </section>`,
   ].join('');
 }
+$('#shelves').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-crisk]');
+  if (!b) return;
+  claimRisk = b.dataset.crisk;
+  transition(renderShelves, 'fade');
+});
 
 /* Body map */
 const BODY = `<svg viewBox="0 0 100 120" class="body-svg" aria-hidden="true">
@@ -1001,7 +1010,7 @@ function recipeCard(r, i = 0) {
   const c = catById[r.cat];
   const saved = savedRecipes.includes(r.id);
   return `<button class="rcard stagger" data-recipe="${r.id}" style="--c:${c.color};--d:${Math.min(i, 12) * 30}ms">
-    <span class="rcard-art">${vesselSvg(c.vessel, c.color)}${saved ? '<span class="tile-fav">★</span>' : ''}</span>
+    <span class="rcard-art">${r.emoji ? `<span class="rcard-emoji">${r.emoji}</span>` : vesselSvg(c.vessel, c.color)}${saved ? '<span class="tile-fav">★</span>' : ''}</span>
     <span class="rcard-body">
       <strong>${r.name}</strong>
       <span class="rcard-tag">${r.tagline}</span>
@@ -1064,7 +1073,7 @@ function recipePage(r) {
         <h2 id="gp-title">${r.name}</h2>
         <p class="gp-tagline">${r.tagline}</p>
       </div>
-      <div class="gp-art">${vesselSvg(c.vessel, c.color)}</div>
+      <div class="gp-art">${r.emoji ? `<span class="gp-emoji">${r.emoji}</span>` : vesselSvg(c.vessel, c.color)}</div>
     </header>
     <div class="gp-paper" style="--c:${c.color}">
       <p class="gp-intro">${r.intro}</p>
@@ -1080,7 +1089,7 @@ function recipePage(r) {
         </section>
       </div>
       ${r.notes ? `<section class="gp-box gp-notes"><h3>Notes</h3><p>${r.notes}</p></section>` : ''}
-      <section class="gp-dosage"><h3>Dosage</h3><p>${r.dosage}</p></section>
+      <section class="gp-dosage"><h3>${['food', 'juice'].includes(r.cat) ? 'Serving' : 'Dosage'}</h3><p>${r.dosage}</p></section>
       <section class="gp-caution"><strong>⚠️ Safety</strong><p>${r.caution}</p></section>
       <p class="gp-uses">Used for: ${r.uses.join(' · ')}</p>
       <div class="rs-actions">

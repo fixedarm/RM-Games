@@ -537,7 +537,9 @@ mark { background: color-mix(in srgb, var(--gold) 55%, transparent); color: inhe
 .tile.wide .tile-body strong { font-size: 1.15rem; }
 
 /* Claims shelf */
-.claims { display: grid; gap: 10px; }
+.claims { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); align-items: start; }
+.claim-filter { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; }
+.claim-filter .chip { flex-shrink: 0; }
 .claim details { margin-top: 6px; }
 .claim summary { cursor: pointer; font-weight: 700; font-size: .86rem; color: var(--rc); list-style: none; }
 .claim summary::-webkit-details-marker { display: none; }
@@ -1013,3 +1015,8 @@ mark { background: color-mix(in srgb, var(--gold) 55%, transparent); color: inhe
 .pl-stepcard.has-pic .pl-stepbody { padding-right: 12px; }
 .pl-stepcard.has-pic.done .pl-steppic img { filter: saturate(.35) brightness(1.05); }
 .pl-stepcard.has-pic.done .pl-steppic::after { content: '✓ Done'; position: absolute; right: 10px; top: 10px; padding: 4px 10px; border-radius: 999px; background: #2e8a57; color: #fff; font-weight: 800; font-size: .78rem; }
+
+/* Kitchen recipes: food emoji on a soft plate */
+.rcard-emoji { display: grid; place-items: center; width: 84px; aspect-ratio: 1; border-radius: 50%; font-size: 46px; line-height: 1;
+  background: radial-gradient(circle at 50% 45%, #fff 0 55%, color-mix(in srgb, var(--c) 18%, #fff) 56% 100%); box-shadow: 0 8px 18px -10px color-mix(in srgb, var(--c) 70%, transparent); }
+.gp-emoji { display: grid; place-items: center; width: 96px; aspect-ratio: 1; border-radius: 50%; font-size: 54px; background: #fff3; backdrop-filter: blur(2px); margin: 0 6px 10px 0; }
