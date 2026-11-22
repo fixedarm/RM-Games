@@ -127,8 +127,8 @@
       </header>
       <div class="mode-switch" id="mode-switch" role="tablist">
         <span class="mode-thumb" aria-hidden="true"></span>
-        <button role="tab" class="active" data-mode="recipes">❧ Apothecary recipes</button>
-        <button role="tab" data-mode="skills">⚒ Lost skills</button>
+        <button role="tab" class="active" data-mode="recipes"><span class="ms-icon">🌿</span><span class="ms-text"><b>Apothecary</b><small id="ms-recipes">Recipes & remedies</small></span></button>
+        <button role="tab" data-mode="skills"><span class="ms-icon">🏕️</span><span class="ms-text"><b>Self-Sufficient</b><small id="ms-skills">Skills & survival</small></span></button>
       </div>
       <div id="guide-recipes">
       <div class="search-wrap">
@@ -167,6 +167,7 @@
     </section>
   </main>
 
+  <button id="to-top" class="to-top" aria-label="Back to top"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <nav class="dock" aria-label="Sections">
     <button data-tab="today" class="active"><span class="dock-ico">☀</span><span>Today</span></button>
     <button data-tab="advisor"><span class="dock-ico">✦</span><span>Advisor</span></button>
@@ -187,7 +188,7 @@
     <article class="gpage" id="gpage" role="dialog" aria-modal="true" aria-labelledby="gp-title"></article>
   </div>
 
-  <!-- Lost skills: build mode -->
+  <!-- Self-sufficient skills: build mode -->
   <div class="player" id="player" hidden role="dialog" aria-modal="true" aria-labelledby="pl-title">
     <header class="pl-top">
       <button class="pl-close" id="pl-close" aria-label="Close">✕</button>

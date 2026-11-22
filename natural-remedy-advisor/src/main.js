@@ -5,6 +5,7 @@ import { claims } from './data/claims.js';
 import { KINDS, ZONES, kindOf, zonesOf, stepsOf } from './data/taxonomy.js';
 import { GUIDE_CATS, BASICS, recipes } from './data/guide.js';
 import { RECIPE_USES } from './data/recipe-uses.js';
+import { searchApp, hitsForPrompt, localAnswer } from './app-search.js';
 import manual from './data/manual.json';
 import { MANUAL_IMG, STEP_IMG, EMERGENCY_NUMBER } from './data/field.js';
 import { checkRedFlags } from './data/redflags.js';
@@ -80,15 +81,19 @@ function transition(update, type) {
   if (reduceMotion || !document.startViewTransition) return update();
   document.documentElement.dataset.vt = type || '';
   const t = document.startViewTransition(update);
-  t.finished.finally(() => delete document.documentElement.dataset.vt);
+  t.finished.finally(() => delete document.documentElement.dataset.vt).catch(() => {});
+  t.ready.catch(() => {}); // a newer transition (e.g. quick back presses) skips this one: harmless
   return t;
 }
 
 /* ---------- Tabs ---------- */
 const TAB_ORDER = ['today', 'advisor', 'remedies', 'guide', 'learn'];
 let currentTab = null;
-function showTab(name) {
+const tabHistory = [];
+function showTab(name, { back = false } = {}) {
   if (name === currentTab) return;
+  if (currentTab && !back) tabHistory.push(currentTab);
+  if (tabHistory.length > 20) tabHistory.shift();
   const dir = currentTab && TAB_ORDER.indexOf(name) < TAB_ORDER.indexOf(currentTab) ? 'back' : 'forward';
   const apply = () => {
     document.querySelectorAll('.dock button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
@@ -470,6 +475,25 @@ function urgentHtml(flags) {
     <p>Call your local emergency number or see a doctor. Home remedies are not appropriate here.</p></div>`;
 }
 
+const FOUND_LABEL = { remedy: 'Remedy', recipe: 'Recipe', skill: 'Skill', pillar: 'Pillar', claim: 'Claim checked' };
+function foundHtml(m) {
+  if (!m.found?.length) return '';
+  return `<div class="found"><div class="found-head">📚 Found in the app${m.local ? '' : ' · answered from these first'}</div>
+    <div class="found-chips">${m.found.map((f) => `<button class="found-chip t-${f.type}" data-found="${f.type}:${f.key}"><span>${f.icon}</span><b>${escapeHtml(f.title.length > 48 ? `${f.title.slice(0, 46)}…` : f.title)}</b><small>${FOUND_LABEL[f.type]}</small></button>`).join('')}</div></div>`;
+}
+function openFound(ref) {
+  const [type, key] = ref.split(/:(.*)/s);
+  if (type === 'remedy') return openRemedy(Number(key));
+  if (type === 'recipe') { showTab('guide'); setGuideMode('recipes', false); return openGuidePage(recipePage(recipes.find((r) => r.id === key))); }
+  if (type === 'skill') { showTab('guide'); setGuideMode('skills', false); return openSkill(key); }
+  if (type === 'pillar') return showTab('learn');
+  if (type === 'claim') {
+    claimRisk = 'all'; openClaims = true; focusClaim = Number(key);
+    showTab('remedies'); renderShelves();
+    setTimeout(() => document.querySelector(`[data-claim="${key}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 400);
+  }
+}
+
 function renderChat() {
   const msgs = activeMessages();
   chatEl.innerHTML = '';
@@ -480,7 +504,7 @@ function renderChat() {
     ));
   }
   msgs.forEach((m, i) =>
-    addBubble(m.role, m.urgent ? urgentHtml(m.flags) : m.role === 'user' ? escapeHtml(m.text) : renderMarkdown(m.text), m.role === 'assistant' && !m.urgent ? i : undefined),
+    addBubble(m.role, m.urgent ? urgentHtml(m.flags) : m.role === 'user' ? escapeHtml(m.text) : foundHtml(m) + renderMarkdown(m.text), m.role === 'assistant' && !m.urgent ? i : undefined),
   );
   $('#suggestions').innerHTML = msgs.length
     ? ''
@@ -489,6 +513,8 @@ function renderChat() {
 }
 
 chatEl.addEventListener('click', async (e) => {
+  const f = e.target.closest('[data-found]');
+  if (f) return openFound(f.dataset.found);
   const btn = e.target.closest('.bubble-actions button');
   if (!btn) return;
   const idx = Number(btn.dataset.idx);
@@ -576,10 +602,21 @@ $('#chat-form').addEventListener('submit', async (e) => {
   const form = $('#chat-form');
   form.classList.add('busy');
   try {
-    const messages = thread.messages.filter((m) => !m.urgent).map(({ role, text }) => ({ role, text }));
-    const data = await askAdvisor(messages);
+    // Search the app's own knowledge first; the AI is told to answer from it.
+    const hits = searchApp(text);
+    const found = hits.map(({ type, key, title, icon }) => ({ type, key, title, icon }));
+    const messages = thread.messages.filter((m) => !m.urgent).map(({ role, text: t }) => ({ role, text: t }));
+    let data;
+    try {
+      data = await askAdvisor(messages, hitsForPrompt(hits));
+    } catch (err) {
+      if (!hits.length) throw err;
+      // No key, offline or server error: answer from the app alone.
+      const why = !navigator.onLine ? 'you are offline' : /key/i.test(err.message) ? 'no Gemini key is set' : 'the AI could not be reached';
+      data = { text: `${localAnswer(hits)}\n\nℹ️ Answered from the app only because ${why}. Add a Gemini key in Settings (⚙︎) for a fuller, personal answer.`, local: true };
+    }
     if (data.urgent) thread.messages.push({ role: 'assistant', urgent: true, flags: data.flags, text: '' });
-    else if (data.text) thread.messages.push({ role: 'assistant', text: data.text });
+    else if (data.text) thread.messages.push({ role: 'assistant', text: data.text, found, ...(data.local ? { local: true } : {}) });
     else throw new Error(data.error || 'Something went wrong');
     thread.updated = Date.now();
     renderChat();
@@ -716,14 +753,18 @@ $('#journal').addEventListener('click', (e) => {
   }
 });
 
-async function askAdvisor(messages) {
+async function askAdvisor(messages, appContext = '') {
   const { key, model } = store.get('settings', {});
-  if (key) return { text: await callGemini(toGeminiHistory(messages), key, model || DEFAULT_MODEL, goalContext(goalById(profile.goal))) };
+  if (key) {
+    const history = toGeminiHistory(messages);
+    history[history.length - 1].parts[0].text += appContext;
+    return { text: await callGemini(history, key, model || DEFAULT_MODEL, goalContext(goalById(profile.goal))) };
+  }
   if (!HAS_SERVER) throw new Error('Add your Gemini API key in Settings (⚙︎) to use the advisor.');
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages, goal: profile.goal }),
+    body: JSON.stringify({ messages, goal: profile.goal, appContext }),
   });
   if (!res.headers.get('content-type')?.includes('application/json')) {
     throw new Error('The advisor server is not available here. Add your Gemini API key in Settings (⚙︎).');
@@ -784,12 +825,42 @@ const remedyCard = (r) => remedyTile(r, 'wide');
 
 let claimRisk = 'all';
 const RISK = { high: 'High risk if acted on', medium: 'Can cause harm', low: 'Mostly unproven' };
-function claimCard(c, i) {
-  return `<article class="claim risk-${c.risk}" style="--d:${i * 25}ms">
-    <div class="claim-head"><span class="claim-topic">${c.topic}</span><span class="risk-badge">${RISK[c.risk]}</span></div>
-    <p class="claim-text">“${c.claim}”</p>
-    <details><summary>What the evidence says</summary><p>${c.evidence}</p><p class="claim-risk">⚠️ ${c.riskText}</p></details>
-  </article>`;
+const CLAIM_GROUPS = [
+  { id: 'cancer', label: 'Cancer & screening', icon: '🎗️', topics: ['Cancer', 'Screening'] },
+  { id: 'meds', label: 'Medication, diabetes & heart', icon: '💊', topics: ['Diabetes', 'Heart', 'Medication', 'Blood pressure', 'Thyroid', 'Kidneys', 'Mental health'] },
+  { id: 'babies', label: 'Babies, pregnancy & parenting', icon: '👶', topics: ['Babies', 'Pregnancy', 'Parenting', 'Vaccines'] },
+  { id: 'aid', label: 'Infections & first aid', icon: '🩹', topics: ['Infections', 'First aid', 'Essential oils'] },
+  { id: 'food', label: 'Food, detox & kitchen myths', icon: '🥗', topics: ['Sugar', 'Fats', 'Detox drinks', 'Gut', 'Digestion', 'Liver', 'Weight', 'Food', 'Kitchen tests', 'Water', 'Gallbladder'] },
+  { id: 'other', label: 'Body, home & everything else', icon: '🏠', topics: [] },
+];
+const claimGroupOf = (c) => (CLAIM_GROUPS.find((g) => g.topics.includes(c.topic)) || CLAIM_GROUPS.at(-1)).id;
+let openClaims = false;
+let focusClaim = null;
+function claimCard(c) {
+  const i = claims.indexOf(c);
+  return `<details class="claim risk-${c.risk}" data-claim="${i}" ${focusClaim === i ? 'open' : ''}>
+    <summary><i class="risk-dot" title="${RISK[c.risk]}"></i><span class="claim-text">${c.claim}</span><span class="claim-topic">${c.topic}</span></summary>
+    <div class="claim-body"><span class="risk-badge">${RISK[c.risk]}</span><p><b>What the evidence says:</b> ${c.evidence}</p><p class="claim-risk">⚠️ ${c.riskText}</p></div>
+  </details>`;
+}
+function claimsSection() {
+  const counts = Object.fromEntries(Object.keys(RISK).map((k) => [k, claims.filter((c) => c.risk === k).length]));
+  const list = claims.filter((c) => claimRisk === 'all' || c.risk === claimRisk);
+  const focusGroup = focusClaim !== null ? claimGroupOf(claims[focusClaim]) : null;
+  const groups = CLAIM_GROUPS.map((g) => [g, list.filter((c) => claimGroupOf(c) === g.id)]).filter(([, cs]) => cs.length);
+  return `<details class="shelf claims-shelf" id="claims-box" ${openClaims ? 'open' : ''}>
+    <summary class="claims-summary">
+      <span class="claims-title">⚖️ Claims checked <small>${claims.length}</small></span>
+      <span class="claims-counts"><i class="risk-high">${counts.high} high risk</i><i class="risk-medium">${counts.medium} can harm</i><i class="risk-low">${counts.low} unproven</i></span>
+      <span class="claims-lede">Popular claims we checked against the evidence. No instructions, just what the evidence says. You decide.</span>
+      <i class="chev" aria-hidden="true"></i>
+    </summary>
+    <div class="claim-filter" role="group" aria-label="Filter claims">${[['all', 'All'], ...Object.entries(RISK)].map(([k, v]) => `<button class="chip ${claimRisk === k ? 'active' : ''}" data-crisk="${k}">${v}${k === 'all' ? '' : ` · ${counts[k]}`}</button>`).join('')}</div>
+    ${groups.map(([g, cs]) => `<details class="claim-group" data-cgroup="${g.id}" ${claimRisk !== 'all' || focusGroup === g.id ? 'open' : ''}>
+      <summary><span>${g.icon}</span><b>${g.label}</b><span class="cg-dots">${['high', 'medium', 'low'].map((k) => cs.filter((c) => c.risk === k).length ? `<i class="risk-${k}">${cs.filter((c) => c.risk === k).length}</i>` : '').join('')}</span><i class="chev" aria-hidden="true"></i></summary>
+      <div class="claim-list">${cs.map(claimCard).join('')}</div>
+    </details>`).join('')}
+  </details>`;
 }
 
 function shelf(title, sub, items, cls = '') {
@@ -811,21 +882,19 @@ function renderShelves() {
       const items = remedies.filter((r) => kindOf(r) === k.id);
       return shelf(`${k.icon} ${k.label}`, `${items.length}`, items.map((r) => remedyTile(r)));
     }),
-    `<section class="shelf claims-shelf">
-      <div class="shelf-head"><h2>⚖️ Claims checked</h2><span>${claims.length}</span></div>
-      <p class="claims-intro">Popular natural-health claims we checked against the evidence. We don't give instructions for these because acting on them can cause harm, so here is what the evidence says. You decide.</p>
-      <div class="claim-filter" role="group" aria-label="Filter claims">${[['all', `All ${claims.length}`], ...Object.entries(RISK).map(([k, v]) => [k, `${v} · ${claims.filter((c) => c.risk === k).length}`])]
-        .map(([k, v]) => `<button class="chip ${claimRisk === k ? 'active' : ''}" data-crisk="${k}">${v}</button>`).join('')}</div>
-      <div class="claims">${claims.filter((c) => claimRisk === 'all' || c.risk === claimRisk).map(claimCard).join('')}</div>
-    </section>`,
+    claimsSection(),
   ].join('');
 }
 $('#shelves').addEventListener('click', (e) => {
   const b = e.target.closest('[data-crisk]');
   if (!b) return;
   claimRisk = b.dataset.crisk;
+  focusClaim = null;
   transition(renderShelves, 'fade');
 });
+$('#shelves').addEventListener('toggle', (e) => {
+  if (e.target.id === 'claims-box') openClaims = e.target.open;
+}, true);
 
 /* Body map */
 const BODY = `<svg viewBox="0 0 100 120" class="body-svg" aria-hidden="true">
@@ -1201,7 +1270,7 @@ addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !$('#gsheet').hidden) closeGuidePage();
 });
 
-/* ---------- Lost skills: assembly manual ---------- */
+/* ---------- Self-sufficient skills: assembly manual ---------- */
 // Shared arrow/pattern definitions used by every line drawing.
 document.body.insertAdjacentHTML('afterbegin', `<svg width="0" height="0" style="position:absolute" aria-hidden="true">${manual.sprite}</svg>`);
 
@@ -1219,6 +1288,8 @@ let skillPos = store.get('skillPos', {});
 let skillChapter = 'all';
 let guideMode = store.get('guideMode', 'recipes');
 
+$('#ms-recipes').textContent = `${recipes.length} recipes`;
+$('#ms-skills').textContent = `${manual.skills.length} skills`;
 function setGuideMode(mode, animate = true) {
   guideMode = mode;
   store.set('guideMode', mode);
@@ -1227,9 +1298,9 @@ function setGuideMode(mode, animate = true) {
     $('#mode-switch').dataset.mode = mode;
     $('#guide-recipes').hidden = mode !== 'recipes';
     $('#guide-skills').hidden = mode !== 'skills';
-    $('#guide-title').textContent = mode === 'skills' ? 'Lost Skills' : 'Home Apothecary';
+    $('#guide-title').textContent = mode === 'skills' ? 'Self-Sufficient' : 'Home Apothecary';
     $('#guide-sub').textContent = mode === 'skills'
-      ? `An illustrated field manual: ${manual.skills.length} hands-on skills, most urgent first. Emergencies, first aid, water, food, fire and hard times, one step at a time.`
+      ? `Skills to look after yourself and your family when help is far away: ${manual.skills.length} illustrated, hands-on skills, most urgent first. Emergencies, first aid, water, food, fire and hard times, one step at a time.`
       : 'A recipe book of balms, teas, syrups and tonics to make at home, each with dosage and safety notes.';
   };
   animate ? transition(apply, 'fade') : apply();
@@ -1824,3 +1895,52 @@ setInterval(() => {
 if ('serviceWorker' in navigator && import.meta.env.PROD && location.protocol === 'https:' && !window.Capacitor) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});
 }
+
+
+/* ---------- Back to top ---------- */
+const toTop = $('#to-top');
+const activeTabEl = () => document.querySelector('.tab.active');
+function updateToTop() {
+  const t = activeTabEl();
+  const show = Boolean(t) && t.id !== 'tab-advisor' && t.scrollTop > 500;
+  toTop.classList.toggle('show', show);
+}
+document.addEventListener('scroll', (e) => { if (e.target.classList?.contains('tab')) updateToTop(); }, true);
+document.querySelector('.dock').addEventListener('click', () => setTimeout(updateToTop, 50));
+toTop.addEventListener('click', () => {
+  activeTabEl()?.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  buzz(6);
+});
+
+/* ---------- Back button (Android hardware/gesture back, and browser Escape) ---------- */
+// Closes the top-most layer first, then steps back through tabs, then leaves the app.
+function goBack() {
+  const openDialog = [...document.querySelectorAll('dialog[open]')].pop();
+  if (openDialog) {
+    if (openDialog.id === 'settings') { openDialog.close(); return true; }
+    return true; // intro/onboarding must be finished, not dismissed
+  }
+  if (!$('#player').hidden) { closeSkill(); return true; }
+  if (!$('#sos').hidden) { transition(() => ($('#sos').hidden = true), 'sheet'); return true; }
+  if (!$('#rsheet').hidden) { closeRemedy(); return true; }
+  if (!$('#gsheet').hidden) { closeGuidePage(); return true; }
+  if (!$('#journal').hidden) { closeJournal(); return true; }
+  const t = activeTabEl();
+  if (t && t.scrollTop > 800) { t.scrollTo({ top: 0, behavior: 'smooth' }); return true; }
+  const prev = tabHistory.pop();
+  if (prev) { showTab(prev, { back: true }); return true; }
+  if (currentTab !== 'today') { showTab('today', { back: true }); return true; }
+  return false;
+}
+if (window.Capacitor?.isNativePlatform?.()) {
+  import('@capacitor/app').then(({ App }) => {
+    let lastBack = 0;
+    App.addListener('backButton', () => {
+      if (goBack()) return;
+      // On the home tab: press back twice to leave.
+      if (Date.now() - lastBack < 2000) App.exitApp();
+      else { lastBack = Date.now(); toast('Press back again to exit'); }
+    });
+  });
+}
+window.nraBack = goBack; // lets tests drive the back button

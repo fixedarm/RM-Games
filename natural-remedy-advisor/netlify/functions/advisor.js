@@ -29,9 +29,9 @@ export default async (req) => {
   if (ALLOWED.length && origin && !ALLOWED.includes(origin)) return json({ error: 'Origin not allowed' }, 403, origin);
   if (!process.env.GEMINI_API_KEY) return json({ error: 'Server is missing GEMINI_API_KEY' }, 500, origin);
 
-  let messages, goal;
+  let messages, goal, appContext;
   try {
-    ({ messages, goal } = await req.json());
+    ({ messages, goal, appContext } = await req.json());
   } catch {
     return json({ error: 'Invalid JSON' }, 400, origin);
   }
@@ -42,6 +42,8 @@ export default async (req) => {
   // Server-side red-flag check: emergencies never reach the model.
   const flags = checkRedFlags(history[history.length - 1].parts[0].text);
   if (flags.length) return json({ urgent: true, flags }, 200, origin);
+  // Matching app knowledge, added after the red-flag check so its safety wording can't trigger it.
+  if (typeof appContext === 'string' && appContext) history[history.length - 1].parts[0].text += appContext.slice(0, 6000);
 
   try {
     return json({ text: await callGemini(history, process.env.GEMINI_API_KEY, MODEL, goalContext(goalById(goal))) }, 200, origin);
