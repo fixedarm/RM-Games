@@ -1097,4 +1097,16 @@ export const recipes = [
     caution: 'Fruit sugar remains. Keep refrigerated: no sugar means it does not keep like jam.',
     evidence: 'some',
   },
+  {
+    id: 'slippery-elm-drink', emoji: '🥛', cat: 'tea', name: 'Slippery Elm Gut-Coating Drink', tagline: 'A smooth drink that soothes the stomach lining',
+    uses: ['stomach pain', 'gastritis', 'reflux', 'ibs', 'sore throat'],
+    intro: 'Slippery elm bark powder turns into a soft gel when it meets water. Drunk straight away, it coats and soothes an irritated throat, stomach and gut. Retreats use it with a change of water timing for long-standing stomach pain.',
+    makes: '1 cup', time: '2 min', keeps: 'Make fresh: it sets as it stands',
+    ingredients: [['1 tsp', 'slippery elm bark powder'], ['¼ cup', 'boiling water'], ['¾ cup', 'cold water'], ['optional', 'a little honey or a pinch of cinnamon']],
+    steps: ['Put the powder in a cup.', 'Pour on the boiling water and whisk fast with a fork or small whisk until smooth, with no lumps.', 'Top up with the cold water and stir.', 'Drink straight away, before it thickens.', 'Have it between meals, and drink your water between meals rather than with them.'],
+    notes: 'If it gets too thick, add more water. Alternate weeks with aloe vera inner-leaf gel for a sensitive gut.',
+    dosage: '1 cup, 2–3 times a day between meals, for a week or two.',
+    caution: 'Take medicines 2 hours apart: it coats the gut and can slow their absorption. It soothes but does not cure H. pylori or ulcers: keep any treatment your doctor prescribed. Choose sustainably sourced bark. Not in pregnancy without advice.',
+    evidence: 'traditional',
+  },
 ];

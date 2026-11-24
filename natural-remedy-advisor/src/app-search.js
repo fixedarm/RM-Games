@@ -12,7 +12,7 @@ const STOP = new Set('a an and are as at be but by can could do does for from ge
 // Everyday words mapped to the terms the app uses.
 const SYN = {
   tummy: ['stomach', 'digestion'], belly: ['stomach', 'gut'], stomachache: ['stomach', 'cramps'], gas: ['bloating', 'wind'], gassy: ['bloating', 'wind'], farting: ['wind', 'bloating'],
-  heartburn: ['reflux'], acid: ['reflux'], indigestion: ['digestion', 'bloating'], poop: ['constipation'], constipated: ['constipation'], runs: ['diarrhoea'], diarrhea: ['diarrhoea'],
+  heartburn: ['reflux'], helicobacter: ['pylori', 'stomach'], ulcer: ['ulcer', 'stomach'], acid: ['reflux'], indigestion: ['digestion', 'bloating'], poop: ['constipation'], constipated: ['constipation'], runs: ['diarrhoea'], diarrhea: ['diarrhoea'],
   throwing: ['vomiting', 'nausea'], vomit: ['vomiting'], queasy: ['nausea'], sick: ['nausea', 'cold'],
   sleep: ['insomnia', 'sleep'], sleepless: ['insomnia'], awake: ['insomnia'], tired: ['fatigue', 'energy'], exhausted: ['fatigue'], energy: ['fatigue', 'energy'],
   stressed: ['stress'], anxious: ['anxiety'], nervous: ['anxiety'], worried: ['anxiety'], depressed: ['mood', 'depression'], sad: ['mood'], panic: ['panic', 'anxiety'],

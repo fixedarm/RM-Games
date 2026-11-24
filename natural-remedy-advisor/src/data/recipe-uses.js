@@ -55,4 +55,5 @@ export const RECIPE_USES = {
   'black-bean-brownies': { good: 'A dessert with real fibre and protein.', remedy: [] },
   'cranberry-sauce': { good: 'A festive sauce sweetened with maple instead of sugar.', remedy: [] },
   'blueberry-chia-jam': { good: 'A spread with no added sugar, plus fibre and omega-3.', remedy: ['constipation (fibre)'] },
+  'slippery-elm-drink': { good: 'Coating and soothing an irritated stomach, gut or throat.', remedy: ['stomach pain', 'gastritis', 'reflux', 'irritable bowel', 'sore throat'] },
 };

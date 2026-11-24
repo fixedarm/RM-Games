@@ -172,7 +172,7 @@ export const remedies = [
   },
   {
     name: 'Slippery elm',
-    for: ['heartburn', 'reflux', 'sore throat', 'ibs', 'colitis', 'bloating'],
+    for: ['heartburn', 'reflux', 'sore throat', 'ibs', 'colitis', 'bloating', 'stomach pain', 'gastritis'],
     evidence: 'traditional',
     how: 'Pour boiling water onto 1 teaspoon of powder and stir quickly until smooth, add a little cold water and drink before it thickens. Up to 3 times a day. For a sensitive gut, alternate a week of slippery elm with a week of aloe vera gel.',
     caution: 'Coats the gut and can reduce absorption of medicines: take them 2 hours apart.',
@@ -391,7 +391,7 @@ export const remedies = [
     name: 'Water before meals for the stomach',
     for: ['stomach ulcer', 'gastritis', 'heartburn', 'digestion'],
     evidence: 'traditional',
-    how: 'Drink a glass of water 30 minutes before each meal, and enough the day before: the stomach needs water to make its digestive juices and protective mucus.',
+    how: 'Drink your water between meals, not with them. Start early in the morning, half a glass at a time. Stop drinking 30 minutes before each meal, drink little or nothing with the meal, and start again 1½–2 hours after. The traditional reasoning: water between meals helps the stomach build its protective mucus, while big drinks with meals dilute the stomach acid that digests food.',
     caution: 'Stomach ulcers are usually caused by H. pylori bacteria or anti-inflammatory painkillers: get tested and treated. Black stools or vomiting blood are an emergency.',
   },
   {
@@ -589,5 +589,12 @@ export const remedies = [
     evidence: 'strong',
     how: 'No screens under 2, about an hour a day for 2–5 year olds, no devices in bedrooms, and screens off an hour before bed. Swap in sand, water, wood, outdoor play and long-distance looking, which protects young eyes from short-sightedness.',
     caution: 'Model it: children copy adult screen habits.',
+  },
+{
+    name: 'Stomach reset: water timing & slippery elm',
+    for: ['stomach pain', 'gastritis', 'indigestion', 'reflux', 'h. pylori', 'stomach ulcer'],
+    evidence: 'traditional',
+    how: 'A one-week routine taught at health retreats for long-standing stomach pain. 1) Move your water: drink it early in the morning and between meals, stop 30 minutes before each meal, and don\'t drink with meals (one retreat guest found he had been drinking almost a litre with every meal and nothing between). 2) Slippery elm 2–3 times a day to coat and soothe the stomach lining: pour boiling water onto 1 teaspoon of powder, whisk fast, top up with cold water and drink before it thickens. 3) Optionally start with 2 days on vegetable juices, drinking water between every juice, then return to simple meals. Keep the habit after the week.',
+    caution: 'Keep taking any H. pylori or ulcer treatment your doctor prescribed: slippery elm soothes but does not clear the infection, and untreated H. pylori can cause bleeding ulcers and stomach cancer. Ask for a re-test if pain continues after treatment. Black stools, vomiting blood or severe pain are an emergency. Take medicines 2 hours apart from slippery elm. Juice days are not for diabetes on medication or pregnancy.',
   },
 ];
